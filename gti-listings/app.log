@@ -1,0 +1,15 @@
+2025-07-13 12:23:10,241 - INFO - Starting GTI Listings Flask app on port 5000
+2025-07-13 12:23:10,329 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-07-13 12:23:10,329 - INFO - [33mPress CTRL+C to quit[0m
+2025-07-13 12:23:10,330 - INFO -  * Restarting with stat
+2025-07-13 12:23:10,454 - INFO - Starting GTI Listings Flask app on port 5000
+2025-07-13 12:23:10,479 - WARNING -  * Debugger is active!
+2025-07-13 12:23:10,487 - INFO -  * Debugger PIN: 368-675-766
+2025-07-13 12:25:35,745 - INFO - 127.0.0.1 - - [13/Jul/2025 12:25:35] "GET /health HTTP/1.1" 200 -
+2025-07-13 12:25:49,084 - INFO - Saved new listing with ID 60f3ce12-1ae0-438e-9be2-c6e2b8a3e776 and VIN WVWZZZ1JZ1W123456
+2025-07-13 12:25:49,084 - INFO - Added listing with VIN: WVWZZZ1JZ1W123456
+2025-07-13 12:25:49,085 - INFO - 127.0.0.1 - - [13/Jul/2025 12:25:49] "[35m[1mPOST /listings HTTP/1.1[0m" 201 -
+2025-07-13 12:26:03,084 - INFO - Listing with VIN WVWZZZ1JZ1W123456 already exists with ID 60f3ce12-1ae0-438e-9be2-c6e2b8a3e776
+2025-07-13 12:26:03,084 - INFO - Duplicate listing with VIN: WVWZZZ1JZ1W123456
+2025-07-13 12:26:03,084 - INFO - 127.0.0.1 - - [13/Jul/2025 12:26:03] "POST /listings HTTP/1.1" 200 -

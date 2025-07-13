@@ -1,0 +1,11 @@
+{
+  "id": "60f3ce12-1ae0-438e-9be2-c6e2b8a3e776",
+  "data": {
+    "url": "https://example.com/listing/123",
+    "price": "25000",
+    "year": "2018",
+    "mileage": "45000",
+    "distance": "15 miles",
+    "vin": "WVWZZZ1JZ1W123456"
+  }
+}
