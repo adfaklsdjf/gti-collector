@@ -41,6 +41,8 @@ class Store:
     def _save_vin_index(self):
         """Save VIN to file ID mapping."""
         try:
+            # Ensure directories exist before saving
+            self.indices_dir.mkdir(parents=True, exist_ok=True)
             with open(self.vin_index_file, 'w') as f:
                 json.dump(self.vin_index, f, indent=2)
         except Exception as e:
@@ -74,6 +76,8 @@ class Store:
         # Save listing to file
         listing_file = self.data_dir / f"{listing_id}.json"
         try:
+            # Ensure data directory exists before saving
+            self.data_dir.mkdir(parents=True, exist_ok=True)
             with open(listing_file, 'w') as f:
                 json.dump(listing_with_metadata, f, indent=2)
             
