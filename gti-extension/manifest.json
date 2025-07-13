@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "GTI listings collector",
+  "version": "0.1",
+  "description": "Injects code to collect and send car listing data.",
+  "permissions": ["scripting", "activeTab"],
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_title": "Collect GTIs"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}
