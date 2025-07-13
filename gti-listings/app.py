@@ -7,6 +7,7 @@ Simple Flask app to collect used car listings via POST endpoint.
 import json
 import logging
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from store import Store
 
 # Configure logging
@@ -21,6 +22,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all domains on all routes
 store = Store()
 
 @app.route('/listings', methods=['POST'])

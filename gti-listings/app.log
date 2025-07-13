@@ -13,3 +13,58 @@
 2025-07-13 12:26:03,084 - INFO - Listing with VIN WVWZZZ1JZ1W123456 already exists with ID 60f3ce12-1ae0-438e-9be2-c6e2b8a3e776
 2025-07-13 12:26:03,084 - INFO - Duplicate listing with VIN: WVWZZZ1JZ1W123456
 2025-07-13 12:26:03,084 - INFO - 127.0.0.1 - - [13/Jul/2025 12:26:03] "POST /listings HTTP/1.1" 200 -
+2025-07-13 12:36:10,466 - INFO - Starting GTI Listings Flask app on port 5000
+2025-07-13 12:36:38,976 - INFO - 127.0.0.1 - - [13/Jul/2025 12:36:38] "OPTIONS /listings HTTP/1.1" 200 -
+2025-07-13 12:37:15,348 - INFO - 127.0.0.1 - - [13/Jul/2025 12:37:15] "GET /health HTTP/1.1" 200 -
+2025-07-13 12:38:10,370 - INFO - 127.0.0.1 - - [13/Jul/2025 12:38:10] "GET /health HTTP/1.1" 200 -
+2025-07-13 12:39:14,958 - INFO -  * Detected change in '/Users/brianweaver/code/gti-listings/app.py', reloading
+2025-07-13 12:39:14,985 - INFO -  * Restarting with stat
+2025-07-13 12:39:15,154 - INFO - Starting GTI Listings Flask app on port 5000
+2025-07-13 12:39:15,185 - WARNING -  * Debugger is active!
+2025-07-13 12:39:15,190 - INFO -  * Debugger PIN: 368-675-766
+2025-07-13 12:39:21,344 - INFO -  * Detected change in '/Users/brianweaver/code/gti-listings/app.py', reloading
+2025-07-13 12:39:21,370 - INFO -  * Restarting with stat
+2025-07-13 12:39:21,485 - INFO - Starting GTI Listings Flask app on port 5000
+2025-07-13 12:39:21,506 - WARNING -  * Debugger is active!
+2025-07-13 12:39:21,511 - INFO -  * Debugger PIN: 368-675-766
+2025-07-13 12:39:36,709 - INFO - 127.0.0.1 - - [13/Jul/2025 12:39:36] "OPTIONS /listings HTTP/1.1" 200 -
+2025-07-13 12:39:36,713 - INFO - Saved new listing with ID 310fdf92-e477-4dea-bb93-91f495fcfbbe and VIN WVWZZZ1JZ1W999999
+2025-07-13 12:39:36,713 - INFO - Added listing with VIN: WVWZZZ1JZ1W999999
+2025-07-13 12:39:36,713 - INFO - 127.0.0.1 - - [13/Jul/2025 12:39:36] "[35m[1mPOST /listings HTTP/1.1[0m" 201 -
+2025-07-13 12:41:05,321 - INFO - 127.0.0.1 - - [13/Jul/2025 12:41:05] "OPTIONS /listings HTTP/1.1" 200 -
+2025-07-13 12:41:05,323 - INFO - Listing with VIN WVWZZZ1JZ1W999999 already exists with ID 310fdf92-e477-4dea-bb93-91f495fcfbbe
+2025-07-13 12:41:05,323 - INFO - Duplicate listing with VIN: WVWZZZ1JZ1W999999
+2025-07-13 12:41:05,324 - INFO - 127.0.0.1 - - [13/Jul/2025 12:41:05] "POST /listings HTTP/1.1" 200 -
+2025-07-13 12:41:33,392 - INFO - 127.0.0.1 - - [13/Jul/2025 12:41:33] "OPTIONS /listings HTTP/1.1" 200 -
+2025-07-13 12:41:33,394 - INFO - Listing with VIN WVWZZZ1JZ1W999999 already exists with ID 310fdf92-e477-4dea-bb93-91f495fcfbbe
+2025-07-13 12:41:33,395 - INFO - Duplicate listing with VIN: WVWZZZ1JZ1W999999
+2025-07-13 12:41:33,395 - INFO - 127.0.0.1 - - [13/Jul/2025 12:41:33] "POST /listings HTTP/1.1" 200 -
+2025-07-13 12:42:44,183 - INFO - 127.0.0.1 - - [13/Jul/2025 12:42:44] "OPTIONS /listings HTTP/1.1" 200 -
+2025-07-13 12:42:44,186 - ERROR - Error saving listing: [Errno 2] No such file or directory: 'data/1470024c-09e7-48d4-8662-26d3202cf218.json'
+2025-07-13 12:42:44,186 - ERROR - Error processing listing: [Errno 2] No such file or directory: 'data/1470024c-09e7-48d4-8662-26d3202cf218.json'
+2025-07-13 12:42:44,187 - INFO - 127.0.0.1 - - [13/Jul/2025 12:42:44] "[35m[1mPOST /listings HTTP/1.1[0m" 500 -
+2025-07-13 12:42:54,422 - INFO - 127.0.0.1 - - [13/Jul/2025 12:42:54] "OPTIONS /listings HTTP/1.1" 200 -
+2025-07-13 12:42:54,426 - ERROR - Error saving VIN index: [Errno 2] No such file or directory: 'data/indices/vin_to_id.json'
+2025-07-13 12:42:54,427 - INFO - Saved new listing with ID 75e23587-d5bb-4989-a196-044c5f62f073 and VIN WVWZZZ1JZ1W999991
+2025-07-13 12:42:54,427 - INFO - Added listing with VIN: WVWZZZ1JZ1W999991
+2025-07-13 12:42:54,427 - INFO - 127.0.0.1 - - [13/Jul/2025 12:42:54] "[35m[1mPOST /listings HTTP/1.1[0m" 201 -
+2025-07-13 12:43:14,447 - INFO - 127.0.0.1 - - [13/Jul/2025 12:43:14] "OPTIONS /listings HTTP/1.1" 200 -
+2025-07-13 12:43:14,451 - ERROR - Error saving VIN index: [Errno 2] No such file or directory: 'data/indices/vin_to_id.json'
+2025-07-13 12:43:14,451 - INFO - Saved new listing with ID 92db2191-ee9a-4c8b-bbe9-7d26df11e6c3 and VIN WVWZZZ1JZ1W999992
+2025-07-13 12:43:14,451 - INFO - Added listing with VIN: WVWZZZ1JZ1W999992
+2025-07-13 12:43:14,451 - INFO - 127.0.0.1 - - [13/Jul/2025 12:43:14] "[35m[1mPOST /listings HTTP/1.1[0m" 201 -
+2025-07-13 12:43:35,408 - INFO - 127.0.0.1 - - [13/Jul/2025 12:43:35] "OPTIONS /listings HTTP/1.1" 200 -
+2025-07-13 12:43:35,410 - INFO - Listing with VIN WVWZZZ1JZ1W999992 already exists with ID 92db2191-ee9a-4c8b-bbe9-7d26df11e6c3
+2025-07-13 12:43:35,410 - INFO - Duplicate listing with VIN: WVWZZZ1JZ1W999992
+2025-07-13 12:43:35,411 - INFO - 127.0.0.1 - - [13/Jul/2025 12:43:35] "POST /listings HTTP/1.1" 200 -
+2025-07-13 12:45:03,496 - INFO - 127.0.0.1 - - [13/Jul/2025 12:45:03] "OPTIONS /listings HTTP/1.1" 200 -
+2025-07-13 12:45:03,498 - INFO - Listing with VIN WVWZZZ1JZ1W999992 already exists with ID 92db2191-ee9a-4c8b-bbe9-7d26df11e6c3
+2025-07-13 12:45:03,499 - INFO - Duplicate listing with VIN: WVWZZZ1JZ1W999992
+2025-07-13 12:45:03,499 - INFO - 127.0.0.1 - - [13/Jul/2025 12:45:03] "POST /listings HTTP/1.1" 200 -
+2025-07-13 12:45:15,753 - INFO - 127.0.0.1 - - [13/Jul/2025 12:45:15] "OPTIONS /listings HTTP/1.1" 200 -
+2025-07-13 12:45:15,755 - INFO - Listing with VIN WVWZZZ1JZ1W999992 already exists with ID 92db2191-ee9a-4c8b-bbe9-7d26df11e6c3
+2025-07-13 12:45:15,756 - INFO - Duplicate listing with VIN: WVWZZZ1JZ1W999992
+2025-07-13 12:45:15,756 - INFO - 127.0.0.1 - - [13/Jul/2025 12:45:15] "POST /listings HTTP/1.1" 200 -
+2025-07-13 12:45:16,880 - INFO - Listing with VIN WVWZZZ1JZ1W999992 already exists with ID 92db2191-ee9a-4c8b-bbe9-7d26df11e6c3
+2025-07-13 12:45:16,880 - INFO - Duplicate listing with VIN: WVWZZZ1JZ1W999992
+2025-07-13 12:45:16,880 - INFO - 127.0.0.1 - - [13/Jul/2025 12:45:16] "POST /listings HTTP/1.1" 200 -
