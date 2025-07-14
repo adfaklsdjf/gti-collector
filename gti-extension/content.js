@@ -1,5 +1,59 @@
 console.log("🚗 GTI Extension content script injected");
 
+// Create toast notification
+function showToast(message, type = 'info', duration = 3000) {
+  // Remove any existing toast
+  const existingToast = document.getElementById('gti-extension-toast');
+  if (existingToast) {
+    existingToast.remove();
+  }
+  
+  // Create toast element
+  const toast = document.createElement('div');
+  toast.id = 'gti-extension-toast';
+  toast.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    padding: 12px 20px;
+    border-radius: 8px;
+    color: white;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    max-width: 300px;
+    word-wrap: break-word;
+  `;
+  
+  // Set color based on type
+  const colors = {
+    success: '#10B981',
+    error: '#EF4444', 
+    warning: '#F59E0B',
+    info: '#3B82F6',
+    duplicate: '#8B5CF6'
+  };
+  toast.style.backgroundColor = colors[type] || colors.info;
+  
+  // Set message
+  toast.textContent = message;
+  
+  // Add to page
+  document.body.appendChild(toast);
+  
+  // Auto-remove after duration
+  setTimeout(() => {
+    if (toast.parentNode) {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateX(100%)';
+      setTimeout(() => toast.remove(), 300);
+    }
+  }, duration);
+}
+
 // Check if this is a CarGurus listing page
 function isCarGurusListingPage() {
   return window.location.hostname.includes('cargurus.com') && 
@@ -112,11 +166,13 @@ async function sendToBackend(carDetails) {
 // Main function when extension is activated
 function handleExtensionClick() {
   if (!isCarGurusListingPage()) {
-    alert("⚠️ This extension only works on CarGurus vehicle listing pages");
+    showToast("⚠️ This extension only works on CarGurus vehicle listing pages", 'warning');
     return;
   }
   
   console.log("🔍 Extracting car details from CarGurus...");
+  showToast("🔍 Extracting listing data...", 'info', 2000);
+  
   const carDetails = extractCarGurusDetails();
   console.log("📋 Extracted details:", carDetails);
   
@@ -125,7 +181,7 @@ function handleExtensionClick() {
   const missingFields = requiredFields.filter(field => !carDetails[field]);
   
   if (missingFields.length > 0) {
-    alert(`❌ Missing required fields: ${missingFields.join(', ')}`);
+    showToast(`❌ Missing required fields: ${missingFields.join(', ')}`, 'error');
     return;
   }
   
@@ -133,13 +189,13 @@ function handleExtensionClick() {
   sendToBackend(carDetails)
     .then(result => {
       if (result.message.includes('already exists')) {
-        alert(`♻️ Duplicate: ${result.message}`);
+        showToast(`♻️ Duplicate listing detected`, 'duplicate');
       } else {
-        alert(`✅ Success: ${result.message}`);
+        showToast(`✅ Listing saved successfully!`, 'success');
       }
     })
     .catch(error => {
-      alert(`❌ Error: ${error.message}`);
+      showToast(`❌ Error: ${error.message}`, 'error');
     });
 }
 
