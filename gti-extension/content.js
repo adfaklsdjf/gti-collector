@@ -3,7 +3,8 @@ console.log("🚗 GTI Extension content script injected");
 // Check if this is a CarGurus listing page
 function isCarGurusListingPage() {
   return window.location.hostname.includes('cargurus.com') && 
-         window.location.pathname.includes('/vdp.action');
+         (window.location.pathname.includes('/vdp.action') || 
+          window.location.pathname.includes('viewDetailsFilterViewInventoryListing.action'));
 }
 
 // Extract car details from CarGurus page
@@ -111,7 +112,7 @@ async function sendToBackend(carDetails) {
 // Main function when extension is activated
 function handleExtensionClick() {
   if (!isCarGurusListingPage()) {
-    alert("⚠️ This extension only works on CarGurus vehicle detail pages (VDP)");
+    alert("⚠️ This extension only works on CarGurus vehicle listing pages");
     return;
   }
   
