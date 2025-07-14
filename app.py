@@ -123,6 +123,12 @@ LISTINGS_TEMPLATE = '''
         .listing-url a:hover {
             text-decoration: underline;
         }
+        .listing-location {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -136,7 +142,10 @@ LISTINGS_TEMPLATE = '''
         {% for listing in listings %}
         <div class="listing-card">
             <div class="listing-price">{{ listing.data.price }}</div>
-            <div class="listing-title">{{ listing.data.year }} Volkswagen GTI</div>
+            <div class="listing-title">{{ listing.data.title or (listing.data.year + " Volkswagen GTI") }}</div>
+            {% if listing.data.location %}
+            <div class="listing-location">📍 {{ listing.data.location }}</div>
+            {% endif %}
             
             <div class="listing-details">
                 <div class="detail-item">
@@ -186,7 +195,7 @@ def add_listing():
             logger.error("No JSON data provided in request")
             return jsonify({'error': 'No JSON data provided'}), 400
         
-        # Basic field check - all fields are required for now
+        # Basic field check - core fields are required, title/location are optional
         required_fields = ['url', 'price', 'year', 'mileage', 'distance', 'vin']
         missing_fields = [field for field in required_fields if field not in data]
         

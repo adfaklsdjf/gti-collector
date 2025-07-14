@@ -67,6 +67,32 @@ function extractCarGurusDetails() {
     url: window.location.href
   };
   
+  // Extract title using robust selectors
+  const titleElement = document.querySelector('h1[data-cg-ft="vdp-listing-title"]') || 
+                      document.querySelector('._listingHeading_s8u01_6') ||
+                      document.querySelector('h1.oqywn._0ZnFt') ||
+                      document.querySelector('h1');
+  if (titleElement) {
+    carDetails.title = titleElement.textContent.trim();
+  }
+  
+  // Extract location from the paragraph following the title
+  const locationElement = document.querySelector('hgroup._group_s8u01_1 p.oqywn.sCSIz') ||
+                         document.querySelector('h1[data-cg-ft="vdp-listing-title"] + p') ||
+                         Array.from(document.querySelectorAll('p')).find(p => 
+                           p.textContent.match(/.*,\s*[A-Z]{2}\s*\(\d+\s*mi\s*away\)/i)
+                         );
+  if (locationElement) {
+    const locationText = locationElement.textContent.trim();
+    carDetails.location = locationText;
+    
+    // Try to parse distance more precisely from location
+    const distanceMatch = locationText.match(/\((\d+)\s*mi\s*away\)/i);
+    if (distanceMatch) {
+      carDetails.distance = `${distanceMatch[1]} mi away`;
+    }
+  }
+  
   // Extract price
   const priceElement = document.querySelector('.oqywn.FieH9'); 
   if (priceElement) {
@@ -137,8 +163,10 @@ function extractCarGurusDetails() {
     }
   }
   
-  // Add placeholder distance for now
-  carDetails.distance = "Unknown";
+  // Add fallback distance if not extracted from location
+  if (!carDetails.distance) {
+    carDetails.distance = "Unknown";
+  }
   
   return carDetails;
 }
@@ -176,9 +204,13 @@ function handleExtensionClick() {
   const carDetails = extractCarGurusDetails();
   console.log("📋 Extracted details:", carDetails);
   
-  // Validate required fields
+  // Validate required fields (title and location are optional but preferred)
   const requiredFields = ['price', 'year', 'mileage', 'vin'];
   const missingFields = requiredFields.filter(field => !carDetails[field]);
+  
+  // Log optional fields status for debugging
+  if (!carDetails.title) console.warn('⚠️ Title not extracted');
+  if (!carDetails.location) console.warn('⚠️ Location not extracted');
   
   if (missingFields.length > 0) {
     showToast(`❌ Missing required fields: ${missingFields.join(', ')}`, 'error');
