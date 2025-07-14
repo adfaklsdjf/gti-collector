@@ -220,10 +220,15 @@ function handleExtensionClick() {
   // Send to backend
   sendToBackend(carDetails)
     .then(result => {
-      if (result.message.includes('already exists')) {
-        showToast(`♻️ Duplicate listing detected`, 'duplicate');
+      if (result.updated === true) {
+        // Listing was updated
+        showToast(`🔄 Listing updated successfully!`, 'success');
+      } else if (result.updated === false && result.message.includes('No changes')) {
+        // No changes detected
+        showToast(`ℹ️ No changes detected`, 'info');
       } else {
-        showToast(`✅ Listing saved successfully!`, 'success');
+        // New listing created
+        showToast(`✅ New listing saved successfully!`, 'success');
       }
     })
     .catch(error => {

@@ -55,20 +55,45 @@ class TestStore:
         assert sample_listing['vin'] in temp_store.vin_index
         assert temp_store.vin_index[sample_listing['vin']] == result['id']
     
-    def test_add_duplicate_vin_rejected(self, temp_store, sample_listing):
-        """Test that duplicate VINs are rejected."""
+    def test_add_duplicate_vin_upsert(self, temp_store, sample_listing):
+        """Test that duplicate VINs trigger upsert behavior."""
+        # Add first listing
+        result1 = temp_store.add_listing(sample_listing)
+        assert result1['success'] is True
+        assert result1['updated'] is False
+        
+        # Try to add same VIN again with different data
+        updated_listing = sample_listing.copy()
+        updated_listing['url'] = 'https://different.com/listing/456'
+        updated_listing['price'] = '$26,000'
+        updated_listing['title'] = 'Updated Title'
+        
+        result2 = temp_store.add_listing(updated_listing)
+        assert result2['success'] is False  # Not a new listing
+        assert result2['updated'] is True   # But was updated
+        assert result2['id'] == result1['id']  # Same ID returned
+        assert 'price' in result2['changes']
+        assert 'url' in result2['changes']
+        assert 'title' in result2['changes']
+        
+        # Verify only one listing exists but with updated data
+        assert temp_store.get_listing_count() == 1
+        listings = temp_store.get_all_listings()
+        assert listings[0]['data']['price'] == '$26,000'
+        assert listings[0]['data']['title'] == 'Updated Title'
+    
+    def test_add_duplicate_vin_no_changes(self, temp_store, sample_listing):
+        """Test duplicate VIN with identical data."""
         # Add first listing
         result1 = temp_store.add_listing(sample_listing)
         assert result1['success'] is True
         
-        # Try to add same VIN again (different URL)
-        duplicate_listing = sample_listing.copy()
-        duplicate_listing['url'] = 'https://different.com/listing/456'
-        duplicate_listing['price'] = '$26,000'
-        
-        result2 = temp_store.add_listing(duplicate_listing)
+        # Try to add identical listing
+        result2 = temp_store.add_listing(sample_listing)
         assert result2['success'] is False
-        assert result2['id'] == result1['id']  # Same ID returned
+        assert result2['updated'] is False
+        assert result2['change_summary'] == 'No changes detected'
+        assert result2['changes'] == {}
         
         # Verify only one listing exists
         assert temp_store.get_listing_count() == 1

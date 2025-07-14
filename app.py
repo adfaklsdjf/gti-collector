@@ -208,15 +208,34 @@ def add_listing():
             logger.error(f"Missing required fields: {missing_fields}")
             return jsonify({'error': f'Missing required fields: {missing_fields}'}), 400
         
-        # Attempt to store the listing
+        # Attempt to store or update the listing
         result = store.add_listing(data)
         
         if result['success']:
+            # New listing created
             logger.info(f"Added listing with VIN: {data.get('vin', 'N/A')}")
-            return jsonify({'message': 'Listing added successfully', 'id': result['id']}), 201
+            return jsonify({
+                'message': 'Listing added successfully', 
+                'id': result['id'],
+                'updated': False
+            }), 201
+        elif result['updated']:
+            # Existing listing updated
+            logger.info(f"Updated listing with VIN: {data.get('vin', 'N/A')} - {result['change_summary']}")
+            return jsonify({
+                'message': f"Listing updated: {result['change_summary']}", 
+                'id': result['id'],
+                'updated': True,
+                'changes': result['changes']
+            }), 200
         else:
-            logger.info(f"Duplicate listing with VIN: {data.get('vin', 'N/A')}")
-            return jsonify({'message': 'Listing already exists (duplicate VIN)', 'id': result['id']}), 200
+            # No changes detected
+            logger.info(f"No changes for listing with VIN: {data.get('vin', 'N/A')}")
+            return jsonify({
+                'message': 'No changes detected', 
+                'id': result['id'],
+                'updated': False
+            }), 200
     
     except Exception as e:
         logger.error(f"Error processing listing: {str(e)}")

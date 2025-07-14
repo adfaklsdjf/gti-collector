@@ -73,8 +73,8 @@ class TestListingsPostEndpoint:
         assert 'id' in data
         assert len(data['id']) == 36  # UUID length
     
-    def test_add_duplicate_listing(self, client, sample_listing_payload):
-        """Test adding duplicate VIN returns appropriate response."""
+    def test_add_duplicate_listing_no_changes(self, client, sample_listing_payload):
+        """Test adding duplicate VIN with no changes."""
         # Add first listing
         response1 = client.post('/listings',
                                data=json.dumps(sample_listing_payload),
@@ -82,15 +82,43 @@ class TestListingsPostEndpoint:
         assert response1.status_code == 201
         first_id = json.loads(response1.data)['id']
         
-        # Add duplicate
+        # Add duplicate with no changes
         response2 = client.post('/listings',
                                data=json.dumps(sample_listing_payload),
                                content_type='application/json')
         assert response2.status_code == 200
         
         data = json.loads(response2.data)
-        assert 'already exists' in data['message']
+        assert data['message'] == 'No changes detected'
         assert data['id'] == first_id
+        assert data['updated'] is False
+    
+    def test_add_duplicate_listing_with_updates(self, client, sample_listing_payload):
+        """Test adding duplicate VIN with changes triggers update."""
+        # Add first listing
+        response1 = client.post('/listings',
+                               data=json.dumps(sample_listing_payload),
+                               content_type='application/json')
+        assert response1.status_code == 201
+        first_id = json.loads(response1.data)['id']
+        
+        # Add duplicate with changes
+        updated_payload = sample_listing_payload.copy()
+        updated_payload['price'] = '$24,000'
+        updated_payload['title'] = 'Updated Title'
+        
+        response2 = client.post('/listings',
+                               data=json.dumps(updated_payload),
+                               content_type='application/json')
+        assert response2.status_code == 200
+        
+        data = json.loads(response2.data)
+        assert 'Listing updated:' in data['message']
+        assert data['id'] == first_id
+        assert data['updated'] is True
+        assert 'changes' in data
+        assert 'price' in data['changes']
+        assert 'title' in data['changes']
     
     def test_missing_required_fields(self, client):
         """Test missing required fields returns error."""
