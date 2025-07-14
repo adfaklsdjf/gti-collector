@@ -18,11 +18,11 @@ class Store:
     def __init__(self, data_dir='data'):
         """Initialize store with data directory."""
         self.data_dir = Path(data_dir)
-        self.data_dir.mkdir(exist_ok=True)
+        self.data_dir.mkdir(parents=True, exist_ok=True)
         
         # Create indices directory for tracking VINs
         self.indices_dir = self.data_dir / 'indices'
-        self.indices_dir.mkdir(exist_ok=True)
+        self.indices_dir.mkdir(parents=True, exist_ok=True)
         
         self.vin_index_file = self.indices_dir / 'vin_to_id.json'
         self.vin_index = self._load_vin_index()

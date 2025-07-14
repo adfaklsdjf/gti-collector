@@ -188,10 +188,15 @@ LISTINGS_TEMPLATE = '''
 def add_listing():
     """Accept new listing data via POST request."""
     try:
+        # Check content type first
+        if not request.is_json:
+            logger.error("Request content type is not JSON")
+            return jsonify({'error': 'Content-Type must be application/json'}), 400
+        
         # Get JSON data from request
         data = request.get_json()
         
-        if not data:
+        if data is None:
             logger.error("No JSON data provided in request")
             return jsonify({'error': 'No JSON data provided'}), 400
         
