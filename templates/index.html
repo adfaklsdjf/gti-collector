@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}GTI Listings{% endblock %}
+
+{% block styles %}
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.header h1 {
+    color: #1f2937;
+    margin: 0;
+}
+.stats {
+    color: #6b7280;
+    margin-top: 5px;
+}
+.listings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+.listing-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-left: 4px solid #3b82f6;
+}
+.listing-price {
+    font-size: 24px;
+    font-weight: bold;
+    color: #059669;
+    margin-bottom: 10px;
+}
+.listing-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 15px;
+}
+.listing-title a:hover {
+    text-decoration: underline;
+}
+.listing-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+.detail-item {
+    display: flex;
+    flex-direction: column;
+}
+.detail-label {
+    font-size: 12px;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.detail-value {
+    font-size: 14px;
+    color: #374151;
+    font-weight: 500;
+}
+.vin {
+    font-family: monospace;
+    background: #f3f4f6;
+    padding: 5px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #374151;
+    margin-top: 10px;
+}
+.listing-url {
+    margin-top: 15px;
+}
+.listing-url a {
+    color: #3b82f6;
+    text-decoration: none;
+    font-size: 14px;
+}
+.listing-url a:hover {
+    text-decoration: underline;
+}
+.listing-location {
+    font-size: 14px;
+    color: #6b7280;
+    margin-bottom: 15px;
+    font-weight: 500;
+}
+{% endblock %}
+
+{% block content %}
+<div class="header">
+    <h1>🚗 GTI Listings</h1>
+    <div class="stats">{{ count }} listings collected • Sorted by price</div>
+</div>
+
+{% if listings %}
+<div class="listings-grid">
+    {% for listing in listings %}
+    <div class="listing-card">
+        <div class="listing-price">{{ listing.data.price }}</div>
+        <div class="listing-title">
+            <a href="/listing/{{ listing.id }}" style="color: inherit; text-decoration: none;">{{ listing.data.title or (listing.data.year + " Volkswagen GTI") }}</a>
+        </div>
+        {% if listing.data.location %}
+        <div class="listing-location">📍 {{ listing.data.location }}</div>
+        {% endif %}
+        
+        <div class="listing-details">
+            <div class="detail-item">
+                <span class="detail-label">Year</span>
+                <span class="detail-value">{{ listing.data.year }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Mileage</span>
+                <span class="detail-value">{{ listing.data.mileage }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Distance</span>
+                <span class="detail-value">{{ listing.data.distance }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">ID</span>
+                <span class="detail-value">{{ listing.id[:8] }}...</span>
+            </div>
+        </div>
+        
+        <div class="vin">VIN: {{ listing.data.vin }}</div>
+        
+        <div class="listing-url">
+            <a href="{{ listing.data.url }}" target="_blank">View Original Listing →</a>
+            <a href="/listing/{{ listing.id }}" style="display: inline-block; margin-left: 15px; color: #059669; text-decoration: none; font-weight: 500;">View Details →</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div style="text-align: center; padding: 40px;">
+    <h2>No listings yet</h2>
+    <p>Use the browser extension to start collecting GTI listings!</p>
+</div>
+{% endif %}
+{% endblock %}

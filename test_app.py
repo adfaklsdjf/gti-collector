@@ -8,22 +8,34 @@ import pytest
 import tempfile
 import shutil
 import json
-from app import app, store
 
 
 @pytest.fixture
 def client():
     """Create a test client for the Flask app."""
-    app.config['TESTING'] = True
+    from flask import Flask
+    from flask_cors import CORS
+    from store import Store
+    from config import setup_logging
+    from routes.listings import create_listings_routes
+    from routes.individual import create_individual_routes
+    from routes.health import create_health_routes
+    
+    # Create a test Flask app with isolated store
+    test_app = Flask(__name__)
+    test_app.config['TESTING'] = True
+    CORS(test_app)
     
     # Use temporary directory for test data
     temp_dir = tempfile.mkdtemp()
+    test_store = Store(data_dir=temp_dir)
     
-    # Replace the global store with a test store
-    import app as app_module
-    app_module.store = app_module.Store(data_dir=temp_dir)
+    # Register routes with the test store
+    create_listings_routes(test_app, test_store)
+    create_individual_routes(test_app, test_store)
+    create_health_routes(test_app)
     
-    with app.test_client() as client:
+    with test_app.test_client() as client:
         yield client
     
     # Cleanup
