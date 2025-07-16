@@ -204,3 +204,111 @@ class TestStore:
         retrieved_listing = temp_store.get_listing_by_id(fake_id)
         
         assert retrieved_listing is None
+    
+    def test_delete_listing_success(self, temp_store, sample_listing):
+        """Test successfully deleting a listing."""
+        # Add a listing first
+        result = temp_store.add_listing(sample_listing)
+        listing_id = result['id']
+        
+        # Verify listing exists
+        assert temp_store.get_listing_by_id(listing_id) is not None
+        assert sample_listing['vin'] in temp_store.vin_index
+        
+        # Delete the listing
+        delete_result = temp_store.delete_listing(listing_id)
+        
+        # Verify deletion was successful
+        assert delete_result['success'] is True
+        assert 'deleted successfully' in delete_result['message']
+        assert delete_result['vin'] == sample_listing['vin']
+        
+        # Verify listing no longer exists in main directory
+        assert temp_store.get_listing_by_id(listing_id) is None
+        
+        # Verify VIN removed from index
+        assert sample_listing['vin'] not in temp_store.vin_index
+        
+        # Verify listing count decreased
+        assert temp_store.get_listing_count() == 0
+    
+    def test_delete_listing_moved_to_deleted_folder(self, temp_store, sample_listing):
+        """Test that deleted listing is moved to deleted folder."""
+        # Add a listing first
+        result = temp_store.add_listing(sample_listing)
+        listing_id = result['id']
+        
+        # Delete the listing
+        delete_result = temp_store.delete_listing(listing_id)
+        assert delete_result['success'] is True
+        
+        # Verify file exists in deleted folder
+        deleted_file = temp_store.data_dir / 'deleted' / f"{listing_id}.json"
+        assert deleted_file.exists()
+        
+        # Verify deleted file contains original data plus deletion timestamp
+        with open(deleted_file, 'r') as f:
+            deleted_data = json.load(f)
+        
+        assert deleted_data['id'] == listing_id
+        assert deleted_data['data']['vin'] == sample_listing['vin']
+        assert deleted_data['data']['title'] == sample_listing['title']
+        assert 'deleted_at' in deleted_data
+        assert deleted_data['deleted_at'] is not None
+    
+    def test_delete_listing_not_found(self, temp_store):
+        """Test deleting non-existent listing returns appropriate error."""
+        fake_id = 'nonexistent-listing-id'
+        delete_result = temp_store.delete_listing(fake_id)
+        
+        assert delete_result['success'] is False
+        assert 'not found' in delete_result['message']
+        assert fake_id in delete_result['message']
+    
+    def test_delete_listing_creates_deleted_directory(self, temp_store, sample_listing):
+        """Test that deleted directory is created if it doesn't exist."""
+        # Add a listing first
+        result = temp_store.add_listing(sample_listing)
+        listing_id = result['id']
+        
+        # Verify deleted directory doesn't exist yet
+        deleted_dir = temp_store.data_dir / 'deleted'
+        assert not deleted_dir.exists()
+        
+        # Delete the listing
+        delete_result = temp_store.delete_listing(listing_id)
+        assert delete_result['success'] is True
+        
+        # Verify deleted directory was created
+        assert deleted_dir.exists()
+        assert deleted_dir.is_dir()
+    
+    def test_delete_multiple_listings(self, temp_store, sample_listing):
+        """Test deleting multiple listings."""
+        # Add two listings
+        result1 = temp_store.add_listing(sample_listing)
+        listing_id1 = result1['id']
+        
+        second_listing = sample_listing.copy()
+        second_listing['vin'] = 'WVWZZZ1JZ1W654321'
+        second_listing['title'] = 'Different GTI'
+        result2 = temp_store.add_listing(second_listing)
+        listing_id2 = result2['id']
+        
+        # Verify both exist
+        assert temp_store.get_listing_count() == 2
+        
+        # Delete first listing
+        delete_result1 = temp_store.delete_listing(listing_id1)
+        assert delete_result1['success'] is True
+        assert temp_store.get_listing_count() == 1
+        
+        # Delete second listing
+        delete_result2 = temp_store.delete_listing(listing_id2)
+        assert delete_result2['success'] is True
+        assert temp_store.get_listing_count() == 0
+        
+        # Verify both are in deleted folder
+        deleted_dir = temp_store.data_dir / 'deleted'
+        deleted_files = list(deleted_dir.glob("*.json"))
+        assert len(deleted_files) == 2

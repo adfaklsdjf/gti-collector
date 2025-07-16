@@ -322,3 +322,110 @@ class TestCorsHeaders:
         """Test OPTIONS preflight request for CORS."""
         response = client.options('/listings')
         assert response.status_code == 200
+
+
+class TestDeleteListing:
+    """Test DELETE /listings/<id> endpoint."""
+    
+    def test_delete_listing_success(self, client, sample_listing_payload):
+        """Test successfully deleting a listing."""
+        # First add a listing
+        response = client.post('/listings',
+                             data=json.dumps(sample_listing_payload),
+                             content_type='application/json')
+        assert response.status_code == 201
+        
+        listing_id = json.loads(response.data)['id']
+        
+        # Delete the listing
+        response = client.delete(f'/listings/{listing_id}')
+        assert response.status_code == 200
+        
+        data = json.loads(response.data)
+        assert data['message'] == f'Listing {listing_id} deleted successfully'
+        assert data['id'] == listing_id
+        assert data['vin'] == sample_listing_payload['vin']
+        
+        # Verify listing is no longer available via individual page
+        response = client.get(f'/listing/{listing_id}')
+        assert response.status_code == 404
+        
+        # Verify listing is no longer in main listings page
+        response = client.get('/')
+        assert response.status_code == 200
+        assert listing_id.encode() not in response.data
+    
+    def test_delete_listing_not_found(self, client):
+        """Test deleting non-existent listing returns 404."""
+        fake_id = 'nonexistent-listing-id'
+        response = client.delete(f'/listings/{fake_id}')
+        assert response.status_code == 404
+        
+        data = json.loads(response.data)
+        assert 'not found' in data['error']
+        assert fake_id in data['error']
+    
+    def test_delete_listing_affects_listing_count(self, client, sample_listing_payload):
+        """Test that deleting a listing affects the listing count on main page."""
+        # Add a listing
+        response = client.post('/listings',
+                             data=json.dumps(sample_listing_payload),
+                             content_type='application/json')
+        assert response.status_code == 201
+        
+        listing_id = json.loads(response.data)['id']
+        
+        # Verify listing appears on main page
+        response = client.get('/')
+        assert response.status_code == 200
+        assert b'1 listings collected' in response.data
+        
+        # Delete the listing
+        response = client.delete(f'/listings/{listing_id}')
+        assert response.status_code == 200
+        
+        # Verify listing count decreased
+        response = client.get('/')
+        assert response.status_code == 200
+        assert b'0 listings collected' in response.data
+        assert b'No listings yet' in response.data
+    
+    def test_delete_listing_multiple(self, client, sample_listing_payload):
+        """Test deleting multiple listings."""
+        # Add two listings
+        response1 = client.post('/listings',
+                              data=json.dumps(sample_listing_payload),
+                              content_type='application/json')
+        assert response1.status_code == 201
+        listing_id1 = json.loads(response1.data)['id']
+        
+        # Add second listing with different VIN
+        second_listing = sample_listing_payload.copy()
+        second_listing['vin'] = 'WVWZZZ1JZ1W654321'
+        second_listing['title'] = 'Different GTI'
+        response2 = client.post('/listings',
+                              data=json.dumps(second_listing),
+                              content_type='application/json')
+        assert response2.status_code == 201
+        listing_id2 = json.loads(response2.data)['id']
+        
+        # Verify both listings exist
+        response = client.get('/')
+        assert b'2 listings collected' in response.data
+        
+        # Delete first listing
+        response = client.delete(f'/listings/{listing_id1}')
+        assert response.status_code == 200
+        
+        # Verify count decreased
+        response = client.get('/')
+        assert b'1 listings collected' in response.data
+        
+        # Delete second listing
+        response = client.delete(f'/listings/{listing_id2}')
+        assert response.status_code == 200
+        
+        # Verify no listings remain
+        response = client.get('/')
+        assert b'0 listings collected' in response.data
+        assert b'No listings yet' in response.data

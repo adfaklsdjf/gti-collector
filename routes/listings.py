@@ -91,3 +91,24 @@ def create_listings_routes(app, store):
         except Exception as e:
             logger.error(f"Error displaying listings: {str(e)}")
             return f"Error loading listings: {str(e)}", 500
+
+    @app.route('/listings/<listing_id>', methods=['DELETE'])
+    def delete_listing(listing_id):
+        """Delete a listing by moving it to deleted folder and removing from index."""
+        try:
+            result = store.delete_listing(listing_id)
+            
+            if result['success']:
+                logger.info(f"Successfully deleted listing {listing_id}")
+                return jsonify({
+                    'message': result['message'],
+                    'id': listing_id,
+                    'vin': result.get('vin')
+                }), 200
+            else:
+                logger.warning(f"Failed to delete listing {listing_id}: {result['message']}")
+                return jsonify({'error': result['message']}), 404
+        
+        except Exception as e:
+            logger.error(f"Error deleting listing {listing_id}: {str(e)}")
+            return jsonify({'error': 'Internal server error'}), 500
