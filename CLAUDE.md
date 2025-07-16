@@ -8,8 +8,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Current Architecture
 
-### Backend (Python/Flask)
-- **Flask app** (`app.py`) - REST API with CORS support
+### Backend (Python/Flask) - Modular Structure
+- **Flask app** (`app.py`) - Main application initialization (33 lines)
+- **Configuration** (`config.py`) - Logging setup and application configuration
+- **Routes** (`routes/`) - Modular route handlers by functionality:
+  - `listings.py` - Main listing page and POST endpoint for new listings
+  - `individual.py` - Individual listing detail page with edit foundation
+  - `health.py` - Health check endpoint
 - **Store class** (`store.py`) - File-based storage with VIN deduplication and upsert logic
 - **Listing utilities** (`listing_utils.py`) - Data comparison, merging, and change detection
 - **Storage format**: Individual JSON files per listing + VIN index for fast lookups
@@ -20,10 +25,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Smart toast notifications** - Success/update/no-change feedback to user
 - **Robust selectors** - Multiple fallback strategies for brittle generated class names
 
-### Web Interface
+### Web Interface - Template System
+- **Templates** (`templates/`) - Jinja2 templates with inheritance:
+  - `base.html` - Common layout and styling foundation
+  - `index.html` - Main listings page with responsive card grid
+  - `listing_detail.html` - Individual listing detail page
 - **Listings display** - Responsive card-based layout at `http://127.0.0.1:5000/`
+- **Individual listing pages** - Detailed view at `/listing/<id>` ready for editable fields
 - **Price sorting** - Listings sorted low to high for easy comparison
-- **Title and location display** - When available from extraction
+- **Navigation** - Breadcrumb navigation and clickable listing titles
 
 ## Key Features Working
 
@@ -52,7 +62,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Start Flask app (auto-reloads on changes)
 source venv/bin/activate && python app.py
 
-# Run all tests (32 tests total)
+# Run all tests (37 tests total)
 python -m pytest -v
 
 # Run specific test file
@@ -74,23 +84,24 @@ source venv/bin/activate && pip install package_name
 - Use descriptive commit messages with bullet points
 - Include "🤖 Generated with Claude Code" footer
 - Add new files/patterns to `.gitignore` as needed
-- Current ignored: `*.log`, `__pycache__/`, `data/`, `.pytest_cache/`, `*.pyc`
+- Current ignored: `*.log`, `__pycache__/`, `data/`, `.pytest_cache/`, `*.pyc`, `app_old.py`
 
 ## Testing Philosophy
 
 **Goal**: Minimize debug loops by catching errors autonomously through comprehensive testing.
 
-### Current Coverage (32 tests)
-- **Unit tests**: Store class (8 tests) - VIN deduplication, upserts, file operations
-- **Integration tests**: Flask endpoints (13 tests) - API functionality, error handling, CORS
+### Current Coverage (37 tests)
+- **Unit tests**: Store class (10 tests) - VIN deduplication, upserts, file operations, individual retrieval
+- **Integration tests**: Flask endpoints (16 tests) - API functionality, individual pages, error handling, CORS
 - **Utility tests**: listing_utils module (11 tests) - data comparison, merging, formatting
 
 ### Testing Approach
-- **Isolated test environments** with temporary directories and cleanup
+- **Isolated test environments** - each test uses dedicated Flask app with temporary store
 - **Comprehensive fixtures** for reusable test data
 - **Error scenario coverage** - missing fields, invalid data, file system issues
 - **pytest configuration** with verbose output and clean tracebacks
 - **Add tests when adding features** to maintain safety net
+- **Modular test structure** - mirrors application structure for easy maintenance
 
 ## Development Guidelines
 
@@ -102,7 +113,9 @@ source venv/bin/activate && pip install package_name
 - **Break complex features into multiple commits**
 
 ### Code Organization
-- **Modular design** - separate concerns into focused modules
+- **Modular design** - separate concerns into focused modules (~50-100 lines each)
+- **Template inheritance** - base templates with specialized extensions
+- **Route organization** - logical grouping by functionality
 - **Light refactoring** when adding features, not wholesale rewrites
 - **Defensive programming** - handle missing directories, network failures, etc.
 - **Comprehensive logging** for debugging and monitoring
@@ -113,12 +126,35 @@ source venv/bin/activate && pip install package_name
 - **Change detection** only triggers on meaningful value differences
 - **Extensible field system** ready for additional data types
 
+## Recent Major Changes
+
+### App.py Refactoring (July 2025)
+- **Broke down 600+ line monolithic app.py** into focused modules
+- **Introduced template system** with proper Jinja2 inheritance
+- **Created individual listing pages** at `/listing/<id>` as foundation for editable fields
+- **Improved test isolation** with dedicated test Flask app
+- **Enhanced maintainability** with clear separation of concerns
+
+### Individual Listing Pages
+- **Detailed car view** with enhanced styling and layout
+- **Navigation breadcrumbs** for better user experience
+- **Prominent VIN display** and metadata sections
+- **Action buttons** for external links and navigation
+- **Future enhancement area** clearly marked for user-editable fields
+
 ## Future Expansion Areas
+
+### User-Editable Fields (Next Priority)
+- **Personal notes** - text area for user comments and observations
+- **Favorites system** - bookmark interesting listings
+- **Custom tags** - user-defined categories and labels
+- **Price alerts** - notifications when price changes
+- **Comparison tools** - side-by-side listing comparison
 
 ### Additional Fields
 - **Simple fields first** (dealer info, listing age, trim levels)
 - **Complex fields later** (images, detailed specs, package detection)
-- **User-edited fields** (notes, favorites, manual annotations)
+- **Calculated fields** (price per mile, depreciation estimates)
 
 ### Multiple Sites Support
 - **Site-specific extraction scripts** with shared core logic
@@ -137,11 +173,12 @@ source venv/bin/activate && pip install package_name
 - **Maintain VIN-based deduplication** regardless of backend
 
 ### Web Interface Improvements
-- **Filtering and sorting** options
+- **Filtering and sorting** options beyond price
 - **Export functionality** (CSV, spreadsheets)
-- **Image previews** when available
+- **Image previews** when available from listings
 - **Advanced search and comparison** tools
 - **User management** for multi-user scenarios
+- **Dashboard analytics** - market trends, price analysis
 
 ## Current Data Schema
 
@@ -187,4 +224,33 @@ source venv/bin/activate && pip install package_name
 - **Content scripts** only on CarGurus domains
 - **CORS headers** required for cross-origin requests to localhost
 
-This architecture supports confident iteration and feature expansion while maintaining data integrity and user experience quality.
+## Current File Structure
+
+```
+gti-listings/
+├── app.py                 # Main Flask application (33 lines)
+├── config.py              # Configuration and logging setup
+├── store.py               # Data storage and VIN deduplication
+├── listing_utils.py       # Data comparison and merging utilities
+├── routes/                # Route handlers by functionality
+│   ├── __init__.py
+│   ├── listings.py        # Main listing page and POST endpoint
+│   ├── individual.py      # Individual listing detail pages
+│   └── health.py          # Health check endpoint
+├── templates/             # Jinja2 templates
+│   ├── base.html          # Common layout and styling
+│   ├── index.html         # Main listings page
+│   └── listing_detail.html # Individual listing detail page
+├── gti-extension/         # Browser extension
+│   ├── manifest.json
+│   ├── content.js
+│   └── popup.html
+├── test_app.py            # Flask endpoints tests (16 tests)
+├── test_store.py          # Store class tests (10 tests)
+├── test_listing_utils.py  # Utility tests (11 tests)
+├── data/                  # JSON file storage (gitignored)
+├── app.log                # Application logs (gitignored)
+└── CLAUDE.md              # This documentation file
+```
+
+This modular architecture supports confident iteration and feature expansion while maintaining data integrity, user experience quality, and code maintainability.
