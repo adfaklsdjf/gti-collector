@@ -236,6 +236,64 @@ class TestIndexEndpoint:
         assert b'2 listings collected' in response.data
 
 
+class TestIndividualListingPage:
+    """Test individual listing detail page."""
+    
+    def test_view_listing_success(self, client, sample_listing_payload):
+        """Test viewing individual listing page."""
+        # First add a listing
+        response = client.post('/listings',
+                             data=json.dumps(sample_listing_payload),
+                             content_type='application/json')
+        assert response.status_code == 201
+        
+        listing_id = json.loads(response.data)['id']
+        
+        # Then view the individual listing page
+        response = client.get(f'/listing/{listing_id}')
+        assert response.status_code == 200
+        
+        # Check that listing details are displayed
+        assert sample_listing_payload['price'].encode() in response.data
+        assert sample_listing_payload['year'].encode() in response.data
+        assert sample_listing_payload['vin'].encode() in response.data
+        assert sample_listing_payload['title'].encode() in response.data
+        assert sample_listing_payload['location'].encode() in response.data
+        
+        # Check for page-specific elements
+        assert b'Vehicle Details' in response.data
+        assert b'Back to All Listings' in response.data
+        assert b'View Original Listing' in response.data
+        assert b'Vehicle Identification Number' in response.data
+    
+    def test_view_listing_not_found(self, client):
+        """Test viewing non-existent listing returns 404."""
+        fake_id = 'nonexistent-listing-id'
+        response = client.get(f'/listing/{fake_id}')
+        assert response.status_code == 404
+        assert b'Listing not found' in response.data
+    
+    def test_listing_links_from_index(self, client, sample_listing_payload):
+        """Test that index page contains links to individual listings."""
+        # Add a listing
+        response = client.post('/listings',
+                             data=json.dumps(sample_listing_payload),
+                             content_type='application/json')
+        assert response.status_code == 201
+        
+        listing_id = json.loads(response.data)['id']
+        
+        # Check index page contains link to individual listing
+        response = client.get('/')
+        assert response.status_code == 200
+        
+        expected_link = f'/listing/{listing_id}'.encode()
+        assert expected_link in response.data
+        
+        # Check both the title link and the "View Details" link
+        assert b'View Details' in response.data
+
+
 class TestCorsHeaders:
     """Test CORS headers are present."""
     

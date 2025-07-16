@@ -176,3 +176,18 @@ class Store:
     def get_listing_count(self):
         """Get total number of stored listings."""
         return len(list(self.data_dir.glob("*.json")))
+    
+    def get_listing_by_id(self, listing_id):
+        """Retrieve a single listing by ID."""
+        listing_file = self.data_dir / f"{listing_id}.json"
+        
+        if not listing_file.exists():
+            return None
+        
+        try:
+            with open(listing_file, 'r') as f:
+                listing_data = json.load(f)
+                return listing_data
+        except Exception as e:
+            logger.error(f"Error reading listing file {listing_file}: {e}")
+            return None

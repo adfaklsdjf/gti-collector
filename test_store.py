@@ -182,3 +182,25 @@ class TestStore:
         assert saved_data['id'] == listing_id
         assert saved_data['data']['vin'] == sample_listing['vin']
         assert saved_data['data']['title'] == sample_listing['title']
+    
+    def test_get_listing_by_id(self, temp_store, sample_listing):
+        """Test retrieving a single listing by ID."""
+        # Add a listing
+        result = temp_store.add_listing(sample_listing)
+        listing_id = result['id']
+        
+        # Retrieve it by ID
+        retrieved_listing = temp_store.get_listing_by_id(listing_id)
+        
+        assert retrieved_listing is not None
+        assert retrieved_listing['id'] == listing_id
+        assert retrieved_listing['data']['vin'] == sample_listing['vin']
+        assert retrieved_listing['data']['title'] == sample_listing['title']
+        assert retrieved_listing['data']['price'] == sample_listing['price']
+    
+    def test_get_listing_by_id_not_found(self, temp_store):
+        """Test retrieving non-existent listing returns None."""
+        fake_id = 'nonexistent-listing-id'
+        retrieved_listing = temp_store.get_listing_by_id(fake_id)
+        
+        assert retrieved_listing is None
