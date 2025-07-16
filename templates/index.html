@@ -89,6 +89,24 @@
 .listing-url a:hover {
     text-decoration: underline;
 }
+.delete-button {
+    background: #dc2626;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-left: 10px;
+    transition: background 0.2s;
+}
+.delete-button:hover {
+    background: #b91c1c;
+}
+.delete-button:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+}
 .listing-location {
     font-size: 14px;
     color: #6b7280;
@@ -139,6 +157,7 @@
         <div class="listing-url">
             <a href="{{ listing.data.url }}" target="_blank">View Original Listing →</a>
             <a href="/listing/{{ listing.id }}" style="display: inline-block; margin-left: 15px; color: #059669; text-decoration: none; font-weight: 500;">View Details →</a>
+            <button class="delete-button" onclick="deleteListing('{{ listing.id }}', '{{ listing.data.vin }}', this)" title="Delete this listing">Delete</button>
         </div>
     </div>
     {% endfor %}
@@ -149,4 +168,60 @@
     <p>Use the browser extension to start collecting GTI listings!</p>
 </div>
 {% endif %}
+
+<script>
+function deleteListing(listingId, vin, button) {
+    if (!confirm(`Are you sure you want to delete the listing for VIN ${vin}?\n\nThis will move the listing to the deleted folder but preserve the data.`)) {
+        return;
+    }
+    
+    // Disable button and show loading state
+    button.disabled = true;
+    button.textContent = 'Deleting...';
+    
+    fetch(`/listings/${listingId}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message) {
+            alert(`Success: ${data.message}`);
+            // Remove the listing card from the page
+            button.closest('.listing-card').remove();
+            
+            // Update the count in the header
+            const statsElement = document.querySelector('.stats');
+            if (statsElement) {
+                const currentText = statsElement.textContent;
+                const currentCount = parseInt(currentText.match(/\d+/)[0]);
+                const newCount = currentCount - 1;
+                statsElement.textContent = `${newCount} listings collected • Sorted by price`;
+                
+                // Show "No listings yet" message if this was the last listing
+                if (newCount === 0) {
+                    document.querySelector('.listings-grid').innerHTML = `
+                        <div style="text-align: center; padding: 40px; grid-column: 1 / -1;">
+                            <h2>No listings yet</h2>
+                            <p>Use the browser extension to start collecting GTI listings!</p>
+                        </div>
+                    `;
+                }
+            }
+        } else {
+            alert(`Error: ${data.error || 'Unknown error occurred'}`);
+            button.disabled = false;
+            button.textContent = 'Delete';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error deleting listing. Please try again.');
+        button.disabled = false;
+        button.textContent = 'Delete';
+    });
+}
+</script>
 {% endblock %}

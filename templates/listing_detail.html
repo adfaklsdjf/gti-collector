@@ -137,6 +137,17 @@
 .btn-secondary:hover {
     background: #4b5563;
 }
+.btn-danger {
+    background: #dc2626;
+    color: white;
+}
+.btn-danger:hover {
+    background: #b91c1c;
+}
+.btn-danger:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+}
 .metadata {
     color: #6b7280;
     font-size: 13px;
@@ -211,6 +222,9 @@
             <a href="/" class="btn btn-secondary">
                 Back to All Listings
             </a>
+            <button class="btn btn-danger" onclick="deleteListing('{{ listing.id }}', '{{ listing.data.vin }}')" id="deleteButton">
+                Delete Listing
+            </button>
         </div>
         
         <div class="metadata">
@@ -226,4 +240,41 @@
         </div>
     </div>
 </div>
+
+<script>
+function deleteListing(listingId, vin) {
+    if (!confirm(`Are you sure you want to delete this listing for VIN ${vin}?\n\nThis will move the listing to the deleted folder but preserve the data.`)) {
+        return;
+    }
+    
+    const button = document.getElementById('deleteButton');
+    button.disabled = true;
+    button.textContent = 'Deleting...';
+    
+    fetch(`/listings/${listingId}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message) {
+            alert(`Success: ${data.message}`);
+            // Redirect to main listings page
+            window.location.href = '/';
+        } else {
+            alert(`Error: ${data.error || 'Unknown error occurred'}`);
+            button.disabled = false;
+            button.textContent = 'Delete Listing';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error deleting listing. Please try again.');
+        button.disabled = false;
+        button.textContent = 'Delete Listing';
+    });
+}
+</script>
 {% endblock %}
