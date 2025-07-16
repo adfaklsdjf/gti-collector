@@ -6,7 +6,9 @@ Handles main listing page and POST endpoint for new listings.
 
 import json
 import logging
-from flask import request, jsonify, render_template
+import csv
+import io
+from flask import request, jsonify, render_template, make_response
 
 logger = logging.getLogger(__name__)
 
@@ -112,3 +114,43 @@ def create_listings_routes(app, store):
         except Exception as e:
             logger.error(f"Error deleting listing {listing_id}: {str(e)}")
             return jsonify({'error': 'Internal server error'}), 500
+
+    @app.route('/listings/export.csv', methods=['GET'])
+    def export_csv():
+        """Export all listings to CSV with specified columns: link, price, year, mileage, vin."""
+        try:
+            listings = store.get_all_listings()
+            
+            # Create CSV in memory
+            output = io.StringIO()
+            writer = csv.writer(output)
+            
+            # Write header row
+            writer.writerow(['link', 'price', 'year', 'mileage', 'vin'])
+            
+            # Write data rows
+            for listing in listings:
+                data = listing.get('data', {})
+                writer.writerow([
+                    data.get('url', ''),
+                    data.get('price', ''),
+                    data.get('year', ''),
+                    data.get('mileage', ''),
+                    data.get('vin', '')
+                ])
+            
+            # Create response
+            output.seek(0)
+            csv_data = output.getvalue()
+            output.close()
+            
+            response = make_response(csv_data)
+            response.headers['Content-Type'] = 'text/csv'
+            response.headers['Content-Disposition'] = 'attachment; filename=gti-listings-export.csv'
+            
+            logger.info(f"Exported {len(listings)} listings to CSV")
+            return response
+            
+        except Exception as e:
+            logger.error(f"Error exporting CSV: {str(e)}")
+            return f"Error exporting CSV: {str(e)}", 500

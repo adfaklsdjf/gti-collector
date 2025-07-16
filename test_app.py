@@ -561,3 +561,152 @@ class TestCommentsAPI:
         
         data = json.loads(response.data)
         assert data['success'] is True
+
+
+class TestCSVExport:
+    """Test CSV export functionality."""
+    
+    def test_csv_export_empty_listings(self, client):
+        """Test CSV export with no listings."""
+        response = client.get('/listings/export.csv')
+        assert response.status_code == 200
+        assert response.headers['Content-Type'] == 'text/csv'
+        assert response.headers['Content-Disposition'] == 'attachment; filename=gti-listings-export.csv'
+        
+        # Should have header row only
+        csv_data = response.data.decode('utf-8')
+        lines = [line.strip() for line in csv_data.strip().split('\n')]
+        assert len(lines) == 1
+        assert lines[0] == 'link,price,year,mileage,vin'
+    
+    def test_csv_export_single_listing(self, client, sample_listing_payload):
+        """Test CSV export with single listing."""
+        # Add a listing first
+        client.post('/listings',
+                   data=json.dumps(sample_listing_payload),
+                   content_type='application/json')
+        
+        response = client.get('/listings/export.csv')
+        assert response.status_code == 200
+        assert response.headers['Content-Type'] == 'text/csv'
+        
+        csv_data = response.data.decode('utf-8')
+        lines = [line.strip() for line in csv_data.strip().split('\n')]
+        assert len(lines) == 2  # Header + 1 data row
+        
+        # Check header
+        assert lines[0] == 'link,price,year,mileage,vin'
+        
+        # Check data row - price will be quoted if it contains special characters
+        assert sample_listing_payload['url'] in lines[1]
+        assert sample_listing_payload['price'] in lines[1] or f'"{sample_listing_payload["price"]}"' in lines[1]
+        assert sample_listing_payload['year'] in lines[1]
+        assert sample_listing_payload['mileage'] in lines[1]
+        assert sample_listing_payload['vin'] in lines[1]
+    
+    def test_csv_export_multiple_listings(self, client, sample_listing_payload):
+        """Test CSV export with multiple listings."""
+        # Add first listing
+        client.post('/listings',
+                   data=json.dumps(sample_listing_payload),
+                   content_type='application/json')
+        
+        # Add second listing with different VIN
+        second_listing = sample_listing_payload.copy()
+        second_listing['vin'] = 'WVWZZZ1JZ1W654321'
+        second_listing['price'] = '$24,000'
+        second_listing['year'] = '2020'
+        client.post('/listings',
+                   data=json.dumps(second_listing),
+                   content_type='application/json')
+        
+        response = client.get('/listings/export.csv')
+        assert response.status_code == 200
+        
+        csv_data = response.data.decode('utf-8')
+        lines = [line.strip() for line in csv_data.strip().split('\n')]
+        assert len(lines) == 3  # Header + 2 data rows
+        
+        # Check header
+        assert lines[0] == 'link,price,year,mileage,vin'
+        
+        # Check that both listings are present (order may vary)
+        data_rows = lines[1:]
+        vins_in_export = [row.split(',')[-1] for row in data_rows]
+        assert sample_listing_payload['vin'] in vins_in_export
+        assert second_listing['vin'] in vins_in_export
+    
+    def test_csv_export_missing_fields(self, client):
+        """Test CSV export with listings missing some fields."""
+        # Add a listing with missing optional fields
+        minimal_listing = {
+            'url': 'https://test.com/listing/123',
+            'price': '$25,000',
+            'year': '2019',
+            'mileage': '45000',
+            'distance': '15 mi away',
+            'vin': 'WVWZZZ1JZ1W123456'
+            # Missing title and location
+        }
+        
+        client.post('/listings',
+                   data=json.dumps(minimal_listing),
+                   content_type='application/json')
+        
+        response = client.get('/listings/export.csv')
+        assert response.status_code == 200
+        
+        csv_data = response.data.decode('utf-8')
+        lines = [line.strip() for line in csv_data.strip().split('\n')]
+        assert len(lines) == 2
+        
+        # Check that missing fields are handled gracefully
+        assert minimal_listing['url'] in lines[1]
+        assert minimal_listing['price'] in lines[1] or f'"{minimal_listing["price"]}"' in lines[1]
+        assert minimal_listing['year'] in lines[1]
+        assert minimal_listing['mileage'] in lines[1]
+        assert minimal_listing['vin'] in lines[1]
+    
+    def test_csv_export_special_characters(self, client):
+        """Test CSV export with special characters in data."""
+        # Add a listing with special characters
+        special_listing = {
+            'url': 'https://test.com/listing/123',
+            'price': '$25,000',
+            'year': '2019',
+            'mileage': '45,000',  # Comma in mileage
+            'distance': '15 mi away',
+            'vin': 'WVWZZZ1JZ1W123456'
+        }
+        
+        client.post('/listings',
+                   data=json.dumps(special_listing),
+                   content_type='application/json')
+        
+        response = client.get('/listings/export.csv')
+        assert response.status_code == 200
+        
+        csv_data = response.data.decode('utf-8')
+        lines = [line.strip() for line in csv_data.strip().split('\n')]
+        assert len(lines) == 2
+        
+        # Check that CSV properly handles commas by quoting
+        assert '"45,000"' in lines[1]  # Mileage with comma should be quoted
+    
+    def test_csv_export_button_visibility(self, client, sample_listing_payload):
+        """Test that CSV export button appears only when listings exist."""
+        # Initially no listings - button should not be visible
+        response = client.get('/')
+        assert response.status_code == 200
+        assert b'Export CSV' not in response.data
+        
+        # Add a listing
+        client.post('/listings',
+                   data=json.dumps(sample_listing_payload),
+                   content_type='application/json')
+        
+        # Now button should be visible
+        response = client.get('/')
+        assert response.status_code == 200
+        assert b'Export CSV' in response.data
+        assert b'/listings/export.csv' in response.data

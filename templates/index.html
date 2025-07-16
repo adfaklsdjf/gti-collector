@@ -19,6 +19,33 @@
     color: #6b7280;
     margin-top: 5px;
 }
+.header-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 15px;
+}
+.export-button {
+    background: #059669;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s;
+}
+.export-button:hover {
+    background: #047857;
+}
+.export-button:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+}
 .listings-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -119,6 +146,13 @@
 <div class="header">
     <h1>🚗 GTI Listings</h1>
     <div class="stats">{{ count }} listings collected • Sorted by price</div>
+    {% if count > 0 %}
+    <div class="header-actions">
+        <a href="/listings/export.csv" class="export-button">
+            📊 Export CSV
+        </a>
+    </div>
+    {% endif %}
 </div>
 
 {% if listings %}
