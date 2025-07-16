@@ -312,3 +312,113 @@ class TestStore:
         deleted_dir = temp_store.data_dir / 'deleted'
         deleted_files = list(deleted_dir.glob("*.json"))
         assert len(deleted_files) == 2
+    
+    def test_update_comments_success(self, temp_store, sample_listing):
+        """Test successfully updating comments for a listing."""
+        # Add a listing first
+        result = temp_store.add_listing(sample_listing)
+        listing_id = result['id']
+        
+        # Update comments
+        test_comments = "This is a great car!\nLooks very clean.\nWill check it out tomorrow."
+        update_result = temp_store.update_comments(listing_id, test_comments)
+        
+        assert update_result['success'] is True
+        assert 'updated' in update_result['message']
+        
+        # Verify comments were saved
+        retrieved_listing = temp_store.get_listing_by_id(listing_id)
+        assert retrieved_listing['comments'] == test_comments
+    
+    def test_update_comments_with_unicode(self, temp_store, sample_listing):
+        """Test updating comments with unicode characters."""
+        # Add a listing first
+        result = temp_store.add_listing(sample_listing)
+        listing_id = result['id']
+        
+        # Update comments with unicode
+        test_comments = "Great car! 🚗\nPrice looks good 💰\nEmoji test: 🎉 ✨ 🔥"
+        update_result = temp_store.update_comments(listing_id, test_comments)
+        
+        assert update_result['success'] is True
+        
+        # Verify unicode was preserved
+        retrieved_listing = temp_store.get_listing_by_id(listing_id)
+        assert retrieved_listing['comments'] == test_comments
+    
+    def test_update_comments_empty_string(self, temp_store, sample_listing):
+        """Test updating comments with empty string (clearing comments)."""
+        # Add a listing first
+        result = temp_store.add_listing(sample_listing)
+        listing_id = result['id']
+        
+        # First add some comments
+        temp_store.update_comments(listing_id, "Some initial comments")
+        
+        # Then clear them
+        update_result = temp_store.update_comments(listing_id, "")
+        
+        assert update_result['success'] is True
+        
+        # Verify comments were cleared
+        retrieved_listing = temp_store.get_listing_by_id(listing_id)
+        assert retrieved_listing['comments'] == ""
+    
+    def test_update_comments_not_found(self, temp_store):
+        """Test updating comments for non-existent listing."""
+        fake_id = 'nonexistent-listing-id'
+        update_result = temp_store.update_comments(fake_id, "Some comments")
+        
+        assert update_result['success'] is False
+        assert 'not found' in update_result['message']
+        assert fake_id in update_result['message']
+    
+    def test_comments_preserved_during_listing_update(self, temp_store, sample_listing):
+        """Test that comments are preserved when listing data is updated."""
+        # Add a listing first
+        result = temp_store.add_listing(sample_listing)
+        listing_id = result['id']
+        
+        # Add comments
+        test_comments = "My notes about this car"
+        temp_store.update_comments(listing_id, test_comments)
+        
+        # Update the listing data (should preserve comments)
+        updated_listing = sample_listing.copy()
+        updated_listing['price'] = '$24,000'
+        temp_store.add_listing(updated_listing)
+        
+        # Verify comments were preserved
+        retrieved_listing = temp_store.get_listing_by_id(listing_id)
+        assert retrieved_listing['comments'] == test_comments
+        assert retrieved_listing['data']['price'] == '$24,000'
+    
+    def test_new_listing_has_empty_comments(self, temp_store, sample_listing):
+        """Test that new listings start with empty comments."""
+        result = temp_store.add_listing(sample_listing)
+        listing_id = result['id']
+        
+        # Verify new listing has empty comments
+        retrieved_listing = temp_store.get_listing_by_id(listing_id)
+        assert retrieved_listing['comments'] == ""
+    
+    def test_backward_compatibility_missing_comments(self, temp_store, sample_listing):
+        """Test that old listings without comments field get empty comments."""
+        # Add a listing first
+        result = temp_store.add_listing(sample_listing)
+        listing_id = result['id']
+        
+        # Manually modify the file to remove comments field (simulating old format)
+        listing_file = temp_store.data_dir / f"{listing_id}.json"
+        with open(listing_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        # Remove comments field
+        del data['comments']
+        
+        with open(listing_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        
+        # Now retrieve the listing - should have empty comments
+        retrieved_listing = temp_store.get_listing_by_id(listing_id)
+        assert retrieved_listing['comments'] == ""

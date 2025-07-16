@@ -429,3 +429,135 @@ class TestDeleteListing:
         response = client.get('/')
         assert b'0 listings collected' in response.data
         assert b'No listings yet' in response.data
+
+
+class TestCommentsAPI:
+    """Test comments API endpoint."""
+    
+    def test_update_comments_success(self, client, sample_listing_payload):
+        """Test successfully updating comments for a listing."""
+        # First add a listing
+        response = client.post('/listings',
+                             data=json.dumps(sample_listing_payload),
+                             content_type='application/json')
+        assert response.status_code == 201
+        
+        listing_id = json.loads(response.data)['id']
+        
+        # Update comments
+        comments_data = {
+            'comments': 'This is a great car!\nLooks very clean.\nWill check it out tomorrow.'
+        }
+        response = client.put(f'/listing/{listing_id}/comments',
+                            data=json.dumps(comments_data),
+                            content_type='application/json')
+        
+        assert response.status_code == 200
+        
+        data = json.loads(response.data)
+        assert data['success'] is True
+        assert 'updated' in data['message']
+        
+        # Verify comments were saved by viewing the listing page
+        response = client.get(f'/listing/{listing_id}')
+        assert response.status_code == 200
+        assert comments_data['comments'].encode() in response.data
+    
+    def test_update_comments_with_unicode(self, client, sample_listing_payload):
+        """Test updating comments with unicode characters."""
+        # First add a listing
+        response = client.post('/listings',
+                             data=json.dumps(sample_listing_payload),
+                             content_type='application/json')
+        assert response.status_code == 201
+        
+        listing_id = json.loads(response.data)['id']
+        
+        # Update comments with unicode
+        comments_data = {
+            'comments': 'Great car! 🚗\nPrice looks good 💰\nEmoji test: 🎉 ✨ 🔥'
+        }
+        response = client.put(f'/listing/{listing_id}/comments',
+                            data=json.dumps(comments_data),
+                            content_type='application/json')
+        
+        assert response.status_code == 200
+        
+        data = json.loads(response.data)
+        assert data['success'] is True
+    
+    def test_update_comments_empty_string(self, client, sample_listing_payload):
+        """Test updating comments with empty string (clearing comments)."""
+        # First add a listing
+        response = client.post('/listings',
+                             data=json.dumps(sample_listing_payload),
+                             content_type='application/json')
+        assert response.status_code == 201
+        
+        listing_id = json.loads(response.data)['id']
+        
+        # Clear comments
+        comments_data = {'comments': ''}
+        response = client.put(f'/listing/{listing_id}/comments',
+                            data=json.dumps(comments_data),
+                            content_type='application/json')
+        
+        assert response.status_code == 200
+        
+        data = json.loads(response.data)
+        assert data['success'] is True
+    
+    def test_update_comments_not_found(self, client):
+        """Test updating comments for non-existent listing."""
+        fake_id = 'nonexistent-listing-id'
+        comments_data = {'comments': 'Some comments'}
+        
+        response = client.put(f'/listing/{fake_id}/comments',
+                            data=json.dumps(comments_data),
+                            content_type='application/json')
+        
+        assert response.status_code == 404
+        
+        data = json.loads(response.data)
+        assert 'not found' in data['error']
+        assert fake_id in data['error']
+    
+    def test_update_comments_no_json(self, client, sample_listing_payload):
+        """Test updating comments without JSON data."""
+        # First add a listing
+        response = client.post('/listings',
+                             data=json.dumps(sample_listing_payload),
+                             content_type='application/json')
+        assert response.status_code == 201
+        
+        listing_id = json.loads(response.data)['id']
+        
+        # Try to update without JSON
+        response = client.put(f'/listing/{listing_id}/comments',
+                            data='not json',
+                            content_type='text/plain')
+        
+        assert response.status_code == 400
+        
+        data = json.loads(response.data)
+        assert data['error'] == 'Content-Type must be application/json'
+    
+    def test_update_comments_empty_json(self, client, sample_listing_payload):
+        """Test updating comments with empty JSON."""
+        # First add a listing
+        response = client.post('/listings',
+                             data=json.dumps(sample_listing_payload),
+                             content_type='application/json')
+        assert response.status_code == 201
+        
+        listing_id = json.loads(response.data)['id']
+        
+        # Try to update with empty JSON
+        response = client.put(f'/listing/{listing_id}/comments',
+                            data='{}',
+                            content_type='application/json')
+        
+        assert response.status_code == 200
+        
+        data = json.loads(response.data)
+        assert data['success'] is True

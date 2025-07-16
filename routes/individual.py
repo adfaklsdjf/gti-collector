@@ -5,7 +5,7 @@ Handles detailed view of individual car listings.
 """
 
 import logging
-from flask import render_template
+from flask import render_template, request, jsonify
 
 logger = logging.getLogger(__name__)
 
@@ -25,3 +25,39 @@ def create_individual_routes(app, store):
         except Exception as e:
             logger.error(f"Error displaying listing {listing_id}: {str(e)}")
             return f"Error loading listing: {str(e)}", 500
+    
+    @app.route('/listing/<listing_id>/comments', methods=['PUT'])
+    def update_comments(listing_id):
+        """Update comments for a specific listing."""
+        try:
+            # Check content type first
+            if not request.is_json:
+                logger.error("Request content type is not JSON")
+                return jsonify({'error': 'Content-Type must be application/json'}), 400
+            
+            # Get JSON data from request
+            data = request.get_json()
+            
+            if data is None:
+                logger.error("No JSON data provided in request")
+                return jsonify({'error': 'No JSON data provided'}), 400
+            
+            # Extract comments from request
+            comments = data.get('comments', '')
+            
+            # Update comments using store
+            result = store.update_comments(listing_id, comments)
+            
+            if result['success']:
+                logger.info(f"Updated comments for listing {listing_id}")
+                return jsonify({
+                    'message': result['message'],
+                    'success': True
+                }), 200
+            else:
+                logger.warning(f"Failed to update comments for listing {listing_id}: {result['message']}")
+                return jsonify({'error': result['message']}), 404
+        
+        except Exception as e:
+            logger.error(f"Error updating comments for listing {listing_id}: {str(e)}")
+            return jsonify({'error': 'Internal server error'}), 500

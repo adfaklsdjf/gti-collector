@@ -172,6 +172,56 @@
     margin: 0;
     font-size: 14px;
 }
+.comments-section {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 20px;
+    margin-top: 20px;
+}
+.comments-section h3 {
+    color: #1f2937;
+    margin: 0 0 15px 0;
+    font-size: 18px;
+}
+.comments-textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    line-height: 1.5;
+    resize: vertical;
+    box-sizing: border-box;
+}
+.comments-textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+.comments-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+.btn-success {
+    background: #059669;
+    color: white;
+}
+.btn-success:hover {
+    background: #047857;
+}
+.btn-success:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+}
+.comments-help {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 8px;
+}
 {% endblock %}
 
 {% block content %}
@@ -234,14 +284,81 @@
     </div>
 
     <div class="content-section">
-        <div class="edit-section">
-            <h3>🚧 Future Enhancement Area</h3>
-            <p>This page will soon support editable fields like personal notes, favorites, custom tags, and other user-specific annotations.</p>
+        <div class="comments-section">
+            <h3>💬 Comments</h3>
+            <textarea 
+                id="commentsTextarea" 
+                class="comments-textarea" 
+                placeholder="Add your notes, thoughts, or observations about this listing..."
+            >{{ listing.comments or '' }}</textarea>
+            <div class="comments-actions">
+                <button class="btn btn-success" onclick="saveComments()" id="saveButton">
+                    Save Comments
+                </button>
+                <button class="btn btn-secondary" onclick="clearComments()" id="clearButton">
+                    Clear
+                </button>
+            </div>
+            <div class="comments-help">
+                💡 Comments are saved locally and preserved when the listing is updated from the browser extension.
+            </div>
         </div>
     </div>
 </div>
 
 <script>
+function saveComments() {
+    const textarea = document.getElementById('commentsTextarea');
+    const saveButton = document.getElementById('saveButton');
+    const comments = textarea.value;
+    
+    // Show loading state
+    saveButton.disabled = true;
+    saveButton.textContent = 'Saving...';
+    
+    fetch(`/listing/{{ listing.id }}/comments`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ comments: comments })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success feedback
+            saveButton.textContent = 'Saved!';
+            saveButton.style.background = '#059669';
+            
+            // Reset button after 2 seconds
+            setTimeout(() => {
+                saveButton.disabled = false;
+                saveButton.textContent = 'Save Comments';
+                saveButton.style.background = '';
+            }, 2000);
+        } else {
+            alert(`Error: ${data.error || 'Unknown error occurred'}`);
+            saveButton.disabled = false;
+            saveButton.textContent = 'Save Comments';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error saving comments. Please try again.');
+        saveButton.disabled = false;
+        saveButton.textContent = 'Save Comments';
+    });
+}
+
+function clearComments() {
+    const textarea = document.getElementById('commentsTextarea');
+    if (textarea.value && !confirm('Are you sure you want to clear all comments?')) {
+        return;
+    }
+    textarea.value = '';
+    textarea.focus();
+}
+
 function deleteListing(listingId, vin) {
     if (!confirm(`Are you sure you want to delete this listing for VIN ${vin}?\n\nThis will move the listing to the deleted folder but preserve the data.`)) {
         return;

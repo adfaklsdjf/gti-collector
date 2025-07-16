@@ -80,10 +80,11 @@ class Store:
         listing_id = str(uuid.uuid4())
         vin = listing_data['vin']
         
-        # Add metadata
+        # Add metadata and initialize comments field
         listing_with_metadata = {
             'id': listing_id,
-            'data': listing_data
+            'data': listing_data,
+            'comments': ''  # Initialize with empty comments
         }
         
         # Save listing to file
@@ -91,8 +92,8 @@ class Store:
         try:
             # Ensure data directory exists before saving
             self.data_dir.mkdir(parents=True, exist_ok=True)
-            with open(listing_file, 'w') as f:
-                json.dump(listing_with_metadata, f, indent=2)
+            with open(listing_file, 'w', encoding='utf-8') as f:
+                json.dump(listing_with_metadata, f, indent=2, ensure_ascii=False)
             
             # Update VIN index
             self.vin_index[vin] = listing_id
@@ -117,7 +118,7 @@ class Store:
         
         try:
             # Load existing listing
-            with open(listing_file, 'r') as f:
+            with open(listing_file, 'r', encoding='utf-8') as f:
                 existing_listing = json.load(f)
             
             existing_data = existing_listing['data']
@@ -135,15 +136,16 @@ class Store:
                     'change_summary': 'No changes detected'
                 }
             
-            # Update the listing
+            # Update the listing (preserve comments field)
             updated_listing = {
                 'id': listing_id,
-                'data': comparison['updated_data']
+                'data': comparison['updated_data'],
+                'comments': existing_listing.get('comments', '')  # Preserve existing comments
             }
             
             # Save updated listing
-            with open(listing_file, 'w') as f:
-                json.dump(updated_listing, f, indent=2)
+            with open(listing_file, 'w', encoding='utf-8') as f:
+                json.dump(updated_listing, f, indent=2, ensure_ascii=False)
             
             change_summary = format_change_summary(comparison['changes'])
             logger.info(f"Updated listing {listing_id}: {change_summary}")
@@ -166,8 +168,11 @@ class Store:
         
         for listing_file in self.data_dir.glob("*.json"):
             try:
-                with open(listing_file, 'r') as f:
+                with open(listing_file, 'r', encoding='utf-8') as f:
                     listing_data = json.load(f)
+                    # Ensure comments field exists for backward compatibility
+                    if 'comments' not in listing_data:
+                        listing_data['comments'] = ''
                     listings.append(listing_data)
             except Exception as e:
                 logger.error(f"Error reading listing file {listing_file}: {e}")
@@ -187,8 +192,11 @@ class Store:
             return None
         
         try:
-            with open(listing_file, 'r') as f:
+            with open(listing_file, 'r', encoding='utf-8') as f:
                 listing_data = json.load(f)
+                # Ensure comments field exists for backward compatibility
+                if 'comments' not in listing_data:
+                    listing_data['comments'] = ''
                 return listing_data
         except Exception as e:
             logger.error(f"Error reading listing file {listing_file}: {e}")
@@ -214,7 +222,7 @@ class Store:
         
         try:
             # Load listing data to get VIN and other info
-            with open(listing_file, 'r') as f:
+            with open(listing_file, 'r', encoding='utf-8') as f:
                 listing_data = json.load(f)
             
             vin = listing_data.get('data', {}).get('vin')
@@ -228,8 +236,8 @@ class Store:
             
             # Move file to deleted directory
             deleted_file = deleted_dir / f"{listing_id}.json"
-            with open(deleted_file, 'w') as f:
-                json.dump(listing_data, f, indent=2)
+            with open(deleted_file, 'w', encoding='utf-8') as f:
+                json.dump(listing_data, f, indent=2, ensure_ascii=False)
             
             # Remove original file
             listing_file.unlink()
@@ -252,4 +260,50 @@ class Store:
             return {
                 'success': False,
                 'message': f'Error deleting listing: {str(e)}'
+            }
+    
+    def update_comments(self, listing_id, comments):
+        """
+        Update the comments field for a listing.
+        
+        Args:
+            listing_id: The ID of the listing to update
+            comments: The new comments text (UTF-8 string with newlines preserved)
+        
+        Returns:
+            dict with success status and message
+        """
+        listing_file = self.data_dir / f"{listing_id}.json"
+        
+        if not listing_file.exists():
+            logger.warning(f"Attempted to update comments for non-existent listing: {listing_id}")
+            return {
+                'success': False,
+                'message': f'Listing {listing_id} not found'
+            }
+        
+        try:
+            # Load existing listing
+            with open(listing_file, 'r', encoding='utf-8') as f:
+                listing_data = json.load(f)
+            
+            # Update comments field
+            listing_data['comments'] = comments
+            
+            # Save back to file
+            with open(listing_file, 'w', encoding='utf-8') as f:
+                json.dump(listing_data, f, indent=2, ensure_ascii=False)
+            
+            logger.info(f"Updated comments for listing {listing_id}")
+            
+            return {
+                'success': True,
+                'message': f'Comments updated for listing {listing_id}'
+            }
+        
+        except Exception as e:
+            logger.error(f"Error updating comments for listing {listing_id}: {e}")
+            return {
+                'success': False,
+                'message': f'Error updating comments: {str(e)}'
             }
