@@ -83,6 +83,9 @@ def create_listings_routes(app, store):
                 logger.error("No JSON data provided in request")
                 return jsonify({'error': 'No JSON data provided'}), 400
             
+            # Log received data for debugging
+            logger.info(f"📥 Received listing data: {data}")
+            
             # Basic field check - core fields are required, title/location/distance are optional
             required_fields = ['url', 'price', 'year', 'mileage', 'vin']
             missing_fields = [field for field in required_fields if field not in data]

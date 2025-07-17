@@ -140,6 +140,34 @@ function extractCarGurusDetails() {
     }
   }
 
+  // Extract additional vehicle details using H5 + next element pattern
+  const vehicleFields = [
+    'Drivetrain',
+    'Exterior Color', 
+    'Interior Color',
+    'MPG',
+    'Engine',
+    'Fuel type',
+    'Transmission'
+  ];
+
+  console.log("Attempting to extract additional vehicle fields...");
+  vehicleFields.forEach(fieldName => {
+    const h5Element = Array.from(document.querySelectorAll('h5')).find(el => 
+      el.textContent.includes(fieldName)
+    );
+    const valueElement = h5Element ? h5Element.nextElementSibling : null;
+    
+    if (valueElement) {
+      const fieldKey = fieldName.toLowerCase().replace(' ', '_');
+      const fieldValue = valueElement.textContent.trim();
+      carDetails[fieldKey] = fieldValue;
+      console.log(`Extracted ${fieldName}: "${fieldValue}"`);
+    } else {
+      console.log(`Could not find ${fieldName} field`);
+    }
+  });
+
   // Extract year and VIN from records
   const records = document.querySelectorAll('._record_1fvwn_1');
   records.forEach(record => {
@@ -181,6 +209,7 @@ function extractCarGurusDetails() {
 
 // Send data to Flask backend
 async function sendToBackend(carDetails) {
+  console.log('🚗 Complete car details being sent to backend:', carDetails);
   try {
     const response = await fetch('http://127.0.0.1:5000/listings', {
       method: 'POST',
