@@ -63,11 +63,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Start Flask app (auto-reloads on changes)
 source venv/bin/activate && python app.py
 
-# Run all tests (37 tests total)
-python -m pytest -v
+# Run all tests (ALWAYS activate venv first)
+source venv/bin/activate && python -m pytest -v
 
-# Run specific test file
-python -m pytest test_store.py -v
+# Run specific test file (ALWAYS activate venv first)
+source venv/bin/activate && python -m pytest test_store.py -v
 
 # Install new dependencies
 source venv/bin/activate && pip install package_name

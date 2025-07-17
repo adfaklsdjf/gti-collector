@@ -234,8 +234,8 @@ class TestListingsPostEndpoint:
         # Check via individual listing endpoint to see if distance was extracted
         listing_response = client.get(f'/listing/{listing_id}')
         assert listing_response.status_code == 200
-        # The distance should be visible in the listing details
-        assert b'1,888 mi away' in listing_response.data
+        # The distance should be visible in the listing details (numeric format)
+        assert b'1888' in listing_response.data
     
     def test_distance_not_extracted_when_provided(self, client):
         """Test that provided distance is not overridden by location extraction."""

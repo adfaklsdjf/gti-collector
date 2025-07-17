@@ -21,31 +21,31 @@ class TestDistanceExtraction:
         """Test extracting distance from basic location pattern."""
         location = "San Francisco, CA (1,888 mi away)"
         result = extract_distance_from_location(location)
-        assert result == "1,888 mi away"
+        assert result == "1888"
     
     def test_extract_distance_simple_number(self):
         """Test extracting distance with simple number."""
         location = "Cleveland, OH (15 mi away)"
         result = extract_distance_from_location(location)
-        assert result == "15 mi away"
+        assert result == "15"
     
     def test_extract_distance_no_comma(self):
         """Test extracting distance without comma in number."""
         location = "Austin, TX (123 mi away)"
         result = extract_distance_from_location(location)
-        assert result == "123 mi away"
+        assert result == "123"
     
     def test_extract_distance_case_insensitive(self):
         """Test that extraction is case insensitive."""
         location = "Portland, OR (45 MI AWAY)"
         result = extract_distance_from_location(location)
-        assert result == "45 MI AWAY"
+        assert result == "45"
     
     def test_extract_distance_with_spaces(self):
         """Test extraction with various spacing."""
         location = "Denver, CO (234 mi away)"  # Normal spacing - extra spaces in parens is uncommon
         result = extract_distance_from_location(location)
-        assert result == "234 mi away"
+        assert result == "234"
     
     def test_extract_distance_none_input(self):
         """Test with None input."""
@@ -73,7 +73,7 @@ class TestDistanceExtraction:
         """Test with multiple distance patterns - should get first one."""
         location = "Between cities (100 mi away) and (200 mi away)"
         result = extract_distance_from_location(location)
-        assert result == "100 mi away"
+        assert result == "100"
 
 
 class TestProcessListingData:
@@ -92,7 +92,7 @@ class TestProcessListingData:
         
         result = process_listing_data(data)
         
-        assert result['distance'] == '15 mi away'
+        assert result['distance'] == '15'
         assert result['location'] == 'Cleveland, OH (15 mi away)'
         # Original data should be preserved
         assert result['url'] == data['url']
@@ -166,5 +166,5 @@ class TestProcessListingData:
         result = process_listing_data(data)
         
         # Should extract distance from location since provided distance is empty
-        assert result['distance'] == '15 mi away'
+        assert result['distance'] == '15'
         assert result['location'] == 'Cleveland, OH (15 mi away)'

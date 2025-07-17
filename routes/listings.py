@@ -18,17 +18,19 @@ def extract_distance_from_location(location):
     Extract distance from location text like "San Francisco, CA (1,888 mi away)".
     
     Returns:
-        str: Distance string like "1,888 mi away" or None if not found
+        str: Numeric distance string like "1888" or None if not found
     """
     if not location:
         return None
     
     # Look for pattern like "(123 mi away)" or "(1,234 mi away)" with flexible spacing
-    distance_pattern = r'\(\s*(\d+(?:,\d+)?\s*mi\s+away)\s*\)'
+    distance_pattern = r'\(\s*(\d+(?:,\d+)?)\s*mi\s+away\s*\)'
     match = re.search(distance_pattern, location, re.IGNORECASE)
     
     if match:
-        return match.group(1)
+        # Extract just the number and remove commas
+        number_part = match.group(1).replace(',', '')
+        return number_part
     
     return None
 
