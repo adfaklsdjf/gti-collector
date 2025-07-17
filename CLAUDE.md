@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+**IMPORTANT**: After context compaction, Claude should ALWAYS re-read this file first to refresh project understanding and current guidelines.
+
 ## Project Overview
 
 **GTI Listings Collector** - A local Flask app with browser extension for collecting and managing used Volkswagen GTI listings from car websites. Emphasizes incremental development, comprehensive testing, and clean architecture.
@@ -42,7 +44,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Title and location extraction** with multiple selector fallbacks
 - **Required fields**: url, price, year, mileage, vin
 - **Optional fields**: title, location, distance (preserved when available)
-- **Distance extraction**: Automatically extracted from location text patterns like "City, State (123 mi away)"
+- **Distance extraction**: Automatically extracted from location text patterns like "City, State (123 mi away)" and stored as numeric strings for sorting
 - **Change detection**: Updates existing listings with new/changed data only
 
 ### User Experience
@@ -91,10 +93,10 @@ source venv/bin/activate && pip install package_name
 
 **Goal**: Minimize debug loops by catching errors autonomously through comprehensive testing.
 
-### Current Coverage (37 tests)
-- **Unit tests**: Store class (10 tests) - VIN deduplication, upserts, file operations, individual retrieval
-- **Integration tests**: Flask endpoints (16 tests) - API functionality, individual pages, error handling, CORS
-- **Utility tests**: listing_utils module (11 tests) - data comparison, merging, formatting
+### Current Coverage (83 tests)
+- **Unit tests**: Store class, listing utilities, distance extraction - VIN deduplication, upserts, file operations
+- **Integration tests**: Flask endpoints - API functionality, individual pages, error handling, CORS, CSV export
+- **Comprehensive coverage**: All major features tested with edge cases and error scenarios
 
 ### Testing Approach
 - **Isolated test environments** - each test uses dedicated Flask app with temporary store
@@ -104,17 +106,35 @@ source venv/bin/activate && pip install package_name
 - **Add tests when adding features** to maintain safety net
 - **Modular test structure** - mirrors application structure for easy maintenance
 
+## Context Management
+
+### After Context Compaction
+- **ALWAYS re-read CLAUDE.md first** to refresh project understanding
+- **Review recent commits** to understand latest changes
+- **Check current file structure** and test status before proceeding
+
+### Context Window Optimization
+- **Read files strategically** - full files when context is needed, targeted sections when possible
+- **Use search tools efficiently** - Grep and Glob before reading entire codebases
+- **Batch tool calls** when performing related operations
+- **Focus summaries** on technical decisions, implementation patterns, and user requirements
+
+### File Reading Strategy
+- **When editing**: Read entire file to understand current state and context
+- **When searching**: Use targeted search tools before broader file reads
+- **When debugging**: Read related files to understand data flow and dependencies
+
 ## Development Guidelines
 
 ### Incremental Approach
 - **Highly incremental development** - small testable steps
 - **Avoid doing too much at once** to prevent bugfixing spirals
-- **No file should exceed ~100 lines** to maintain simplicity
+- **Keep files focused and cohesive** - separate concerns clearly
 - **Verify each step before proceeding** to next feature
 - **Break complex features into multiple commits**
 
 ### Code Organization
-- **Modular design** - separate concerns into focused modules (~50-100 lines each)
+- **Modular design** - separate concerns into focused modules
 - **Template inheritance** - base templates with specialized extensions
 - **Route organization** - logical grouping by functionality
 - **Light refactoring** when adding features, not wholesale rewrites
@@ -192,7 +212,7 @@ source venv/bin/activate && pip install package_name
     "price": "string (required)", 
     "year": "string (required)",
     "mileage": "string (required)",
-    "distance": "string (optional, auto-extracted from location)",
+    "distance": "string (optional, auto-extracted as numeric from location)",
     "vin": "string (required, unique)",
     "title": "string (optional)",
     "location": "string (optional)"
@@ -246,9 +266,10 @@ gti-listings/
 │   ├── manifest.json
 │   ├── content.js
 │   └── popup.html
-├── test_app.py            # Flask endpoints tests (16 tests)
-├── test_store.py          # Store class tests (10 tests)
-├── test_listing_utils.py  # Utility tests (11 tests)
+├── test_app.py            # Flask endpoints tests
+├── test_store.py          # Store class tests  
+├── test_listing_utils.py  # Utility tests
+├── test_distance_extraction.py # Distance extraction tests
 ├── data/                  # JSON file storage (gitignored)
 ├── app.log                # Application logs (gitignored)
 └── CLAUDE.md              # This documentation file
