@@ -7,7 +7,7 @@ function showToast(message, type = 'info', duration = 3000) {
   if (existingToast) {
     existingToast.remove();
   }
-  
+
   // Create toast element
   const toast = document.createElement('div');
   toast.id = 'gti-extension-toast';
@@ -27,23 +27,23 @@ function showToast(message, type = 'info', duration = 3000) {
     max-width: 300px;
     word-wrap: break-word;
   `;
-  
+
   // Set color based on type
   const colors = {
     success: '#10B981',
-    error: '#EF4444', 
+    error: '#EF4444',
     warning: '#F59E0B',
     info: '#3B82F6',
     duplicate: '#8B5CF6'
   };
   toast.style.backgroundColor = colors[type] || colors.info;
-  
+
   // Set message
   toast.textContent = message;
-  
+
   // Add to page
   document.body.appendChild(toast);
-  
+
   // Auto-remove after duration
   setTimeout(() => {
     if (toast.parentNode) {
@@ -56,8 +56,8 @@ function showToast(message, type = 'info', duration = 3000) {
 
 // Check if this is a CarGurus listing page
 function isCarGurusListingPage() {
-  return window.location.hostname.includes('cargurus.com') && 
-         (window.location.pathname.includes('/vdp.action') || 
+  return window.location.hostname.includes('cargurus.com') &&
+         (window.location.pathname.includes('/vdp.action') ||
           window.location.pathname.includes('viewDetailsFilterViewInventoryListing.action'));
 }
 
@@ -66,42 +66,42 @@ function extractCarGurusDetails() {
   const carDetails = {
     url: window.location.href
   };
-  
+
   // Extract title using robust selectors
-  const titleElement = document.querySelector('h1[data-cg-ft="vdp-listing-title"]') || 
+  const titleElement = document.querySelector('h1[data-cg-ft="vdp-listing-title"]') ||
                       document.querySelector('._listingHeading_s8u01_6') ||
                       document.querySelector('h1.oqywn._0ZnFt') ||
                       document.querySelector('h1');
   if (titleElement) {
     carDetails.title = titleElement.textContent.trim();
   }
-  
+
   // Extract location from the paragraph following the title
   const locationElement = document.querySelector('hgroup._group_s8u01_1 p.oqywn.sCSIz') ||
                          document.querySelector('h1[data-cg-ft="vdp-listing-title"] + p') ||
-                         Array.from(document.querySelectorAll('p')).find(p => 
+                         Array.from(document.querySelectorAll('p')).find(p =>
                            p.textContent.match(/.*,\s*[A-Z]{2}\s*\(\d+\s*mi\s*away\)/i)
                          );
   if (locationElement) {
     const locationText = locationElement.textContent.trim();
     carDetails.location = locationText;
-    
+
     // Try to parse distance more precisely from location
     const distanceMatch = locationText.match(/\((\d+)\s*mi\s*away\)/i);
     if (distanceMatch) {
       carDetails.distance = `${distanceMatch[1]} mi away`;
     }
   }
-  
+
   // Extract price
-  const priceElement = document.querySelector('.oqywn.FieH9'); 
+  const priceElement = document.querySelector('.oqywn.FieH9');
   if (priceElement) {
     carDetails.price = priceElement.textContent.trim();
   } else {
     const potentialPrices = Array.from(document.querySelectorAll('body *')).filter(el => {
       const text = el.textContent.trim();
       const rect = el.getBoundingClientRect();
-      return text.includes('$') && /\d/.test(text) && rect.top < 500; 
+      return text.includes('$') && /\d/.test(text) && rect.top < 500;
     });
     if (potentialPrices.length > 0) {
       const smallestPriceElement = potentialPrices.reduce((prev, curr) => {
@@ -110,28 +110,36 @@ function extractCarGurusDetails() {
       carDetails.price = smallestPriceElement.textContent.trim();
     }
   }
-  
+
   // Extract mileage
-  const mileageElement = document.querySelector('.oqywn.sCSIz._value_1fvwn_13'); 
+  // const mileageElement = document.querySelector('.oqywn.sCSIz._value_1fvwn_13');
+  const h5Element = Array.from(document.querySelectorAll('h5')).find(el => el.textContent.includes('Mileage'));
+  const mileageElement = h5Element ? h5Element.nextElementSibling : null;
+
   if (mileageElement) {
+    console.log("mileageElement found:", mileageElement);
+    if (mileageElement.tagName.toLowerCase() === 'p') {
+      console.log("It's even a paragraph element!");
+    }
     carDetails.mileage = mileageElement.textContent.trim();
   } else {
+    console.log("No mileageElement found, searching for potential mileage elements...");
     const potentialMileages = Array.from(document.querySelectorAll('body *')).filter(el => {
       const text = el.textContent.trim().toLowerCase();
-      return (text.includes('mileage') || text.includes('mi')) && /\d/.test(text) && text.length < 50; 
+      return (text.includes('mileage') || text.includes('mi')) && /\d/.test(text) && text.length < 50;
     });
     if (potentialMileages.length > 0) {
-      const labeledMileage = potentialMileages.find(el => 
+      const labeledMileage = potentialMileages.find(el =>
         el.textContent.trim().toLowerCase().startsWith('mileage:')
       );
       if (labeledMileage) {
         carDetails.mileage = labeledMileage.textContent.trim().replace(/mileage:\s*/i, '').trim();
       } else {
-        carDetails.mileage = potentialMileages[0].textContent.trim(); 
+        carDetails.mileage = potentialMileages[0].textContent.trim();
       }
     }
   }
-  
+
   // Extract year and VIN from records
   const records = document.querySelectorAll('._record_1fvwn_1');
   records.forEach(record => {
@@ -142,32 +150,32 @@ function extractCarGurusDetails() {
       carDetails.vin = text.replace('VIN:', '').trim();
     }
   });
-  
+
   // Fallback year extraction
   if (!carDetails.year) {
-    const yearElement = Array.from(document.querySelectorAll('body *')).find(el => 
+    const yearElement = Array.from(document.querySelectorAll('body *')).find(el =>
       el.textContent.trim().match(/Year:\s*\d{4}/)
     );
     if (yearElement) {
       carDetails.year = yearElement.textContent.trim().replace('Year:', '').trim();
     }
   }
-  
+
   // Fallback VIN extraction
   if (!carDetails.vin) {
-    const vinElement = Array.from(document.querySelectorAll('body *')).find(el => 
+    const vinElement = Array.from(document.querySelectorAll('body *')).find(el =>
       el.textContent.trim().match(/VIN:\s*[A-HJ-NPR-Za-hj-npr-z0-9]{17}/i)
     );
     if (vinElement) {
       carDetails.vin = vinElement.textContent.trim().replace('VIN:', '').trim();
     }
   }
-  
+
   // Add fallback distance if not extracted from location
   if (!carDetails.distance) {
     carDetails.distance = "Unknown";
   }
-  
+
   return carDetails;
 }
 
@@ -181,7 +189,7 @@ async function sendToBackend(carDetails) {
       },
       body: JSON.stringify(carDetails)
     });
-    
+
     const result = await response.json();
     console.log('📤 Backend response:', result);
     return result;
@@ -197,26 +205,26 @@ function handleExtensionClick() {
     showToast("⚠️ This extension only works on CarGurus vehicle listing pages", 'warning');
     return;
   }
-  
+
   console.log("🔍 Extracting car details from CarGurus...");
   showToast("🔍 Extracting listing data...", 'info', 2000);
-  
+
   const carDetails = extractCarGurusDetails();
   console.log("📋 Extracted details:", carDetails);
-  
+
   // Validate required fields (title and location are optional but preferred)
   const requiredFields = ['price', 'year', 'mileage', 'vin'];
   const missingFields = requiredFields.filter(field => !carDetails[field]);
-  
+
   // Log optional fields status for debugging
   if (!carDetails.title) console.warn('⚠️ Title not extracted');
   if (!carDetails.location) console.warn('⚠️ Location not extracted');
-  
+
   if (missingFields.length > 0) {
     showToast(`❌ Missing required fields: ${missingFields.join(', ')}`, 'error');
     return;
   }
-  
+
   // Send to backend
   sendToBackend(carDetails)
     .then(result => {
