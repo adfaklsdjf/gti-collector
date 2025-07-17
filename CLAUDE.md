@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Current Architecture
 
 ### Backend (Python/Flask) - Modular Structure
-- **Flask app** (`app.py`) - Main application initialization (33 lines)
+- **Flask app** (`app.py`) - Main application initialization
 - **Configuration** (`config.py`) - Logging setup and application configuration
 - **Routes** (`routes/`) - Modular route handlers by functionality:
   - `listings.py` - Main listing page and POST endpoint for new listings
@@ -209,7 +209,7 @@ source venv/bin/activate && pip install package_name
   "id": "uuid",
   "data": {
     "url": "string (required)",
-    "price": "string (required)", 
+    "price": "string (required)",
     "year": "string (required)",
     "mileage": "string (required)",
     "distance": "string (optional, auto-extracted as numeric from location)",
@@ -249,7 +249,7 @@ source venv/bin/activate && pip install package_name
 
 ```
 gti-listings/
-├── app.py                 # Main Flask application (33 lines)
+├── app.py                 # Main Flask application
 ├── config.py              # Configuration and logging setup
 ├── store.py               # Data storage and VIN deduplication
 ├── listing_utils.py       # Data comparison and merging utilities
@@ -267,7 +267,7 @@ gti-listings/
 │   ├── content.js
 │   └── popup.html
 ├── test_app.py            # Flask endpoints tests
-├── test_store.py          # Store class tests  
+├── test_store.py          # Store class tests
 ├── test_listing_utils.py  # Utility tests
 ├── test_distance_extraction.py # Distance extraction tests
 ├── data/                  # JSON file storage (gitignored)

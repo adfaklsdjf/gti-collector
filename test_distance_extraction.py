@@ -168,3 +168,21 @@ class TestProcessListingData:
         # Should extract distance from location since provided distance is empty
         assert result['distance'] == '15'
         assert result['location'] == 'Cleveland, OH (15 mi away)'
+    
+    def test_process_listing_data_unknown_distance(self):
+        """Test processing when distance is 'Unknown' (from browser extension)."""
+        data = {
+            'url': 'https://test.com',
+            'price': '$25,000',
+            'year': '2019',
+            'mileage': '45000',
+            'vin': 'TEST123',
+            'location': 'Cleveland, OH (15 mi away)',
+            'distance': 'Unknown'  # From browser extension fallback
+        }
+        
+        result = process_listing_data(data)
+        
+        # Should extract distance from location and replace 'Unknown'
+        assert result['distance'] == '15'
+        assert result['location'] == 'Cleveland, OH (15 mi away)'

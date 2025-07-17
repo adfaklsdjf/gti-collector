@@ -46,8 +46,15 @@ def process_listing_data(data):
     """
     processed_data = data.copy()
     
-    # If distance is not provided but location is, try to extract it
-    if 'distance' not in processed_data or not processed_data.get('distance'):
+    # If distance is not provided, empty, or "Unknown", try to extract it from location
+    distance_value = processed_data.get('distance')
+    should_extract_distance = (
+        'distance' not in processed_data or 
+        not distance_value or 
+        distance_value.lower() == 'unknown'
+    )
+    
+    if should_extract_distance:
         location = processed_data.get('location')
         if location:
             extracted_distance = extract_distance_from_location(location)
