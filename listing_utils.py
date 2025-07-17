@@ -30,7 +30,8 @@ def compare_listing_data(existing_data, new_data):
     # Fields to compare (excluding metadata)
     comparable_fields = [
         'url', 'price', 'year', 'mileage', 'distance', 'vin', 'title', 'location',
-        'drivetrain', 'exterior_color', 'interior_color', 'mpg', 'engine', 'fuel_type', 'transmission'
+        'drivetrain', 'exterior_color', 'interior_color', 'mpg', 'engine', 'fuel_type', 'transmission',
+        'trim_level', 'car_title', 'accidents', 'previous_owners', 'phone_number'
     ]
     
     for field in comparable_fields:

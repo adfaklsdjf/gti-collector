@@ -43,7 +43,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **VIN-based deduplication** with intelligent upsert behavior
 - **Title and location extraction** with multiple selector fallbacks
 - **Required fields**: url, price, year, mileage, vin
-- **Optional fields**: title, location, distance, drivetrain, exterior_color, interior_color, mpg, engine, fuel_type, transmission
+- **Optional fields**: title, location, distance, drivetrain, exterior_color, interior_color, mpg, engine, fuel_type, transmission, trim_level, car_title, accidents, previous_owners, phone_number
 - **Distance extraction**: Automatically extracted from location text patterns like "City, State (123 mi away)" and stored as numeric strings for sorting
 - **Change detection**: Updates existing listings with new/changed data only
 
@@ -222,7 +222,12 @@ source venv/bin/activate && pip install package_name
     "mpg": "string (optional, extracted from H5 fields)",
     "engine": "string (optional, extracted from H5 fields)",
     "fuel_type": "string (optional, extracted from H5 fields)",
-    "transmission": "string (optional, extracted from H5 fields)"
+    "transmission": "string (optional, extracted from H5 fields)",
+    "trim_level": "string (optional, extracted from trim data attribute)",
+    "car_title": "string (optional, combined title + description from categories)",
+    "accidents": "string (optional, combined accident info from categories)",
+    "previous_owners": "string (optional, combined owner info from categories)",
+    "phone_number": "string (optional, extracted from call button)"
   }
 }
 ```

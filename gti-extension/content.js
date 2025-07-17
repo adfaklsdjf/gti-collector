@@ -168,6 +168,74 @@ function extractCarGurusDetails() {
     }
   });
 
+  // Extract trim level
+  console.log("Attempting to extract trim level...");
+  const trimDiv = document.querySelector('div[data-cg-ft="trim"]');
+  if (trimDiv) {
+    const recordDiv = trimDiv.querySelector('div._record_1fvwn_1');
+    if (recordDiv) {
+      const spans = Array.from(recordDiv.querySelectorAll(':scope > span'));
+      for (const span of spans) {
+        if (Array.from(span.classList).some(cls => cls.startsWith('_value'))) {
+          carDetails.trim_level = span.textContent.trim();
+          console.log(`Extracted trim level: "${carDetails.trim_level}"`);
+          break;
+        }
+      }
+    }
+  }
+  if (!carDetails.trim_level) {
+    console.log("Could not find trim level element");
+  }
+
+  // Extract car title, accidents, and previous owners from categories
+  console.log("Attempting to extract categories data (title, accidents, owners)...");
+  const categoriesDiv = document.querySelector('div._elements_1rs20_1');
+  if (categoriesDiv) {
+    const categoryElements = categoriesDiv.querySelectorAll(':scope > ._category_1jffh_1');
+    
+    categoryElements.forEach(categoryDiv => {
+      const heading = categoryDiv.querySelector('h4');
+      const paragraph = categoryDiv.querySelector('p');
+      
+      if (heading && paragraph) {
+        const title = heading.textContent.trim();
+        const description = paragraph.textContent.trim();
+        const combinedText = `${title} - ${description}`;
+        
+        // Determine which field this belongs to based on title content
+        if (title.toLowerCase().includes('title')) {
+          carDetails.car_title = combinedText;
+          console.log(`Extracted car title: "${combinedText}"`);
+        } else if (title.toLowerCase().includes('accident')) {
+          carDetails.accidents = combinedText;
+          console.log(`Extracted accidents: "${combinedText}"`);
+        } else if (title.toLowerCase().includes('owner')) {
+          carDetails.previous_owners = combinedText;
+          console.log(`Extracted previous owners: "${combinedText}"`);
+        }
+      }
+    });
+  } else {
+    console.log("Could not find categories div for title/accidents/owners");
+  }
+
+  // Extract phone number
+  console.log("Attempting to extract phone number...");
+  const callButton = document.querySelector('button[data-testid="ghost-call-btn"]');
+  if (callButton) {
+    for (const node of callButton.childNodes) {
+      if (node.nodeType === Node.TEXT_NODE && node.textContent.trim().length > 0) {
+        carDetails.phone_number = node.textContent.trim();
+        console.log(`Extracted phone number: "${carDetails.phone_number}"`);
+        break;
+      }
+    }
+  }
+  if (!carDetails.phone_number) {
+    console.log("Could not find phone number element");
+  }
+
   // Extract year and VIN from records
   const records = document.querySelectorAll('._record_1fvwn_1');
   records.forEach(record => {
