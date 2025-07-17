@@ -40,8 +40,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Data Collection
 - **VIN-based deduplication** with intelligent upsert behavior
 - **Title and location extraction** with multiple selector fallbacks
-- **Required fields**: url, price, year, mileage, distance, vin
-- **Optional fields**: title, location (preserved when available)
+- **Required fields**: url, price, year, mileage, vin
+- **Optional fields**: title, location, distance (preserved when available)
+- **Distance extraction**: Automatically extracted from location text patterns like "City, State (123 mi away)"
 - **Change detection**: Updates existing listings with new/changed data only
 
 ### User Experience
@@ -191,7 +192,7 @@ source venv/bin/activate && pip install package_name
     "price": "string (required)", 
     "year": "string (required)",
     "mileage": "string (required)",
-    "distance": "string (required)",
+    "distance": "string (optional, auto-extracted from location)",
     "vin": "string (required, unique)",
     "title": "string (optional)",
     "location": "string (optional)"

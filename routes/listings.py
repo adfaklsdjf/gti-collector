@@ -8,9 +8,52 @@ import json
 import logging
 import csv
 import io
+import re
 from flask import request, jsonify, render_template, make_response
 
 logger = logging.getLogger(__name__)
+
+def extract_distance_from_location(location):
+    """
+    Extract distance from location text like "San Francisco, CA (1,888 mi away)".
+    
+    Returns:
+        str: Distance string like "1,888 mi away" or None if not found
+    """
+    if not location:
+        return None
+    
+    # Look for pattern like "(123 mi away)" or "(1,234 mi away)" with flexible spacing
+    distance_pattern = r'\(\s*(\d+(?:,\d+)?\s*mi\s+away)\s*\)'
+    match = re.search(distance_pattern, location, re.IGNORECASE)
+    
+    if match:
+        return match.group(1)
+    
+    return None
+
+def process_listing_data(data):
+    """
+    Process incoming listing data to extract distance from location if needed.
+    
+    Args:
+        data: Raw listing data dict
+        
+    Returns:
+        dict: Processed listing data with distance field populated if possible
+    """
+    processed_data = data.copy()
+    
+    # If distance is not provided but location is, try to extract it
+    if 'distance' not in processed_data or not processed_data.get('distance'):
+        location = processed_data.get('location')
+        if location:
+            extracted_distance = extract_distance_from_location(location)
+            if extracted_distance:
+                processed_data['distance'] = extracted_distance
+                logger.info(f"Extracted distance '{extracted_distance}' from location: {location}")
+    
+    return processed_data
 
 def create_listings_routes(app, store):
     """Register listings routes with the Flask app."""
@@ -31,16 +74,19 @@ def create_listings_routes(app, store):
                 logger.error("No JSON data provided in request")
                 return jsonify({'error': 'No JSON data provided'}), 400
             
-            # Basic field check - core fields are required, title/location are optional
-            required_fields = ['url', 'price', 'year', 'mileage', 'distance', 'vin']
+            # Basic field check - core fields are required, title/location/distance are optional
+            required_fields = ['url', 'price', 'year', 'mileage', 'vin']
             missing_fields = [field for field in required_fields if field not in data]
             
             if missing_fields:
                 logger.error(f"Missing required fields: {missing_fields}")
                 return jsonify({'error': f'Missing required fields: {missing_fields}'}), 400
             
+            # Process listing data to extract distance from location if needed
+            processed_data = process_listing_data(data)
+            
             # Attempt to store or update the listing
-            result = store.add_listing(data)
+            result = store.add_listing(processed_data)
             
             if result['success']:
                 # New listing created

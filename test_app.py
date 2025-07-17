@@ -137,7 +137,7 @@ class TestListingsPostEndpoint:
         incomplete_payload = {
             'url': 'https://test.com/listing/123',
             'price': '$25,000'
-            # Missing year, mileage, distance, vin
+            # Missing year, mileage, vin (distance is now optional)
         }
         
         response = client.post('/listings',
@@ -150,6 +150,8 @@ class TestListingsPostEndpoint:
         assert 'Missing required fields' in data['error']
         assert 'year' in data['error']
         assert 'vin' in data['error']
+        # distance should not be in error since it's optional now
+        assert 'distance' not in data['error']
     
     def test_no_json_data(self, client):
         """Test request without JSON data returns error."""
@@ -174,7 +176,7 @@ class TestListingsPostEndpoint:
         assert 'Missing required fields' in data['error']
     
     def test_optional_fields_accepted(self, client):
-        """Test that optional fields (title, location) are stored."""
+        """Test that optional fields (title, location, distance) are stored."""
         payload = {
             'url': 'https://test.com/listing/123',
             'price': '$25,000',
@@ -190,6 +192,76 @@ class TestListingsPostEndpoint:
                              content_type='application/json')
         
         assert response.status_code == 201
+    
+    def test_missing_distance_accepted(self, client):
+        """Test that missing distance field is accepted since it's optional."""
+        payload = {
+            'url': 'https://test.com/listing/123',
+            'price': '$25,000',
+            'year': '2019',
+            'mileage': '45000',
+            'vin': 'WVWZZZ1JZ1W123456'
+            # No distance field - should be accepted
+        }
+        
+        response = client.post('/listings',
+                             data=json.dumps(payload),
+                             content_type='application/json')
+        
+        assert response.status_code == 201
+    
+    def test_distance_extracted_from_location(self, client):
+        """Test that distance is extracted from location when not provided separately."""
+        payload = {
+            'url': 'https://test.com/listing/123',
+            'price': '$25,000',
+            'year': '2019',
+            'mileage': '45000',
+            'vin': 'WVWZZZ1JZ1W123456',
+            'location': 'San Francisco, CA (1,888 mi away)'
+            # No distance field - should be extracted from location
+        }
+        
+        response = client.post('/listings',
+                             data=json.dumps(payload),
+                             content_type='application/json')
+        
+        assert response.status_code == 201
+        
+        # Verify the listing was stored with extracted distance
+        listing_id = json.loads(response.data)['id']
+        
+        # Check via individual listing endpoint to see if distance was extracted
+        listing_response = client.get(f'/listing/{listing_id}')
+        assert listing_response.status_code == 200
+        # The distance should be visible in the listing details
+        assert b'1,888 mi away' in listing_response.data
+    
+    def test_distance_not_extracted_when_provided(self, client):
+        """Test that provided distance is not overridden by location extraction."""
+        payload = {
+            'url': 'https://test.com/listing/123',
+            'price': '$25,000',
+            'year': '2019',
+            'mileage': '45000',
+            'vin': 'WVWZZZ1JZ1W123456',
+            'location': 'San Francisco, CA (1,888 mi away)',
+            'distance': '25 mi away'  # Explicitly provided - should not be overridden
+        }
+        
+        response = client.post('/listings',
+                             data=json.dumps(payload),
+                             content_type='application/json')
+        
+        assert response.status_code == 201
+        
+        # Verify the explicitly provided distance is preserved
+        listing_id = json.loads(response.data)['id']
+        listing_response = client.get(f'/listing/{listing_id}')
+        assert listing_response.status_code == 200
+        # Should show the explicitly provided distance, not the extracted one
+        assert b'25 mi away' in listing_response.data
+        assert b'1,888 mi away' not in listing_response.data.replace(b'San Francisco, CA (1,888 mi away)', b'')
 
 
 class TestIndexEndpoint:
