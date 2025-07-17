@@ -10,6 +10,7 @@ import csv
 import io
 import re
 from flask import request, jsonify, render_template, make_response
+from desirability import add_desirability_scores
 
 logger = logging.getLogger(__name__)
 
@@ -137,17 +138,34 @@ def create_listings_routes(app, store):
             listings = store.get_all_listings()
             count = len(listings)
             
-            # Sort by price (extract numeric value)
-            def extract_price(listing):
-                try:
-                    price_str = listing.get('data', {}).get('price', '$0')
-                    return int(price_str.replace('$', '').replace(',', ''))
-                except:
-                    return 0
+            # Calculate desirability scores for all listings
+            if listings:
+                listings = add_desirability_scores(listings)
             
-            listings.sort(key=extract_price)
+            # Get sort parameter from query string
+            sort_by = request.args.get('sort', 'price')
             
-            return render_template('index.html', listings=listings, count=count)
+            if sort_by == 'desirability':
+                # Sort by desirability score (highest first)
+                listings.sort(key=lambda x: x.get('desirability_score', 0), reverse=True)
+                sort_description = "Sorted by desirability"
+            else:
+                # Default: sort by price (lowest first)
+                def extract_price(listing):
+                    try:
+                        price_str = listing.get('data', {}).get('price', '$0')
+                        return int(price_str.replace('$', '').replace(',', ''))
+                    except:
+                        return 0
+                
+                listings.sort(key=extract_price)
+                sort_description = "Sorted by price"
+            
+            return render_template('index.html', 
+                                 listings=listings, 
+                                 count=count, 
+                                 sort_by=sort_by,
+                                 sort_description=sort_description)
         except Exception as e:
             logger.error(f"Error displaying listings: {str(e)}")
             return f"Error loading listings: {str(e)}", 500

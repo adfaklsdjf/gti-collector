@@ -34,7 +34,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - `listing_detail.html` - Individual listing detail page
 - **Listings display** - Responsive card-based layout at `http://127.0.0.1:5000/`
 - **Individual listing pages** - Detailed view at `/listing/<id>` ready for editable fields
-- **Price sorting** - Listings sorted low to high for easy comparison
+- **Dual sorting options** - Sort by price (low to high) or desirability score (high to low)
+- **Desirability scores** - Visual star ratings displayed on each listing card
 - **Navigation** - Breadcrumb navigation and clickable listing titles
 
 ## Key Features Working
@@ -45,6 +46,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Required fields**: url, price, year, mileage, vin
 - **Optional fields**: title, location, distance, drivetrain, exterior_color, interior_color, mpg, engine, fuel_type, transmission, trim_level, car_title, accidents, previous_owners, phone_number
 - **Distance extraction**: Automatically extracted from location text patterns like "City, State (123 mi away)" and stored as numeric strings for sorting
+- **Desirability scoring**: Multi-criteria analysis ranking cars by price, mileage, year, and distance
 - **Change detection**: Updates existing listings with new/changed data only
 
 ### User Experience
@@ -57,6 +59,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Comprehensive logging** to `app.log` with change summaries
 - **Defensive directory creation** - handles missing data folders gracefully
 - **Robust error handling** throughout stack
+
+### Desirability Algorithm
+- **Multi-criteria decision analysis** using weighted normalization (0-100 scale)
+- **Current weights**: Price (40%), Mileage (30%), Year (20%), Distance (10%)
+- **Normalization approach**: Lower price/mileage/distance = higher score, newer year = higher score
+- **Extensible design**: Ready for additional factors (accidents, trim level, etc.)
+- **Real-time calculation**: Scores computed on each page load with current data context
 
 ## Development Workflow
 
@@ -265,6 +274,7 @@ gti-listings/
 ├── config.py              # Configuration and logging setup
 ├── store.py               # Data storage and VIN deduplication
 ├── listing_utils.py       # Data comparison and merging utilities
+├── desirability.py        # Multi-criteria desirability scoring system
 ├── routes/                # Route handlers by functionality
 │   ├── __init__.py
 │   ├── listings.py        # Main listing page and POST endpoint
@@ -282,6 +292,8 @@ gti-listings/
 ├── test_store.py          # Store class tests
 ├── test_listing_utils.py  # Utility tests
 ├── test_distance_extraction.py # Distance extraction tests
+├── test_desirability.py   # Desirability scoring tests
+├── js-snippets/           # JavaScript development snippets
 ├── data/                  # JSON file storage (gitignored)
 ├── app.log                # Application logs (gitignored)
 └── CLAUDE.md              # This documentation file

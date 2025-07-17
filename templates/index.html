@@ -46,6 +46,39 @@
     background: #9ca3af;
     cursor: not-allowed;
 }
+.sort-button {
+    background: #6b7280;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s;
+}
+.sort-button:hover {
+    background: #4b5563;
+}
+.sort-button.active {
+    background: #3b82f6;
+}
+.sort-button.active:hover {
+    background: #2563eb;
+}
+.desirability-score {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+    margin-bottom: 8px;
+}
 .listings-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -145,9 +178,15 @@
 {% block content %}
 <div class="header">
     <h1>🚗 GTI Listings</h1>
-    <div class="stats">{{ count }} listings collected • Sorted by price</div>
+    <div class="stats">{{ count }} listings collected • {{ sort_description }}</div>
     {% if count > 0 %}
     <div class="header-actions">
+        <a href="/?sort=price" class="sort-button {{ 'active' if sort_by == 'price' else '' }}">
+            💰 Sort by Price
+        </a>
+        <a href="/?sort=desirability" class="sort-button {{ 'active' if sort_by == 'desirability' else '' }}">
+            ⭐ Sort by Desirability
+        </a>
         <a href="/listings/export.csv" class="export-button">
             📊 Export CSV
         </a>
@@ -159,6 +198,9 @@
 <div class="listings-grid">
     {% for listing in listings %}
     <div class="listing-card">
+        {% if listing.desirability_score %}
+        <div class="desirability-score">⭐ {{ "%.1f"|format(listing.desirability_score) }}</div>
+        {% endif %}
         <div class="listing-price">{{ listing.data.price }}</div>
         <div class="listing-title">
             <a href="/listing/{{ listing.id }}" style="color: inherit; text-decoration: none;">{{ listing.data.title or (listing.data.year + " Volkswagen GTI") }}</a>
