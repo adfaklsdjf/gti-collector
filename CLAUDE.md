@@ -2,7 +2,9 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**IMPORTANT**: After context compaction, Claude should ALWAYS re-read this file first to refresh project understanding and current guidelines.
+**CRITICAL**: After context compaction, Claude MUST re-read this file first to refresh project understanding and current guidelines.
+
+**ESSENTIAL**: Before starting any task, consider if there are questions/clarifications that would be helpful and pro-actively ask them. Don't assume - ask about scope, preferences, constraints, or implementation details that could affect the approach.
 
 ## Project Overview
 
@@ -10,335 +12,125 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Current Architecture
 
-### Backend (Python/Flask) - Modular Structure
-- **Flask app** (`app.py`) - Main application initialization
-- **Configuration** (`config.py`) - Logging setup and application configuration
-- **Routes** (`routes/`) - Modular route handlers by functionality:
-  - `listings.py` - Main listing page and POST endpoint for new listings
-  - `individual.py` - Individual listing detail page with edit foundation
-  - `health.py` - Health check endpoint
-- **Store class** (`store.py`) - File-based storage with VIN deduplication and upsert logic
-- **Listing utilities** (`listing_utils.py`) - Data comparison, merging, and change detection
-- **Storage format**: Individual JSON files per listing + VIN index for fast lookups
+### Backend Components
+- **Flask app** (`app.py`) - Main application with modular routes
+- **Multi-site support** (`site_mappings.py`) - Site detection and field mapping
+- **Data migration system** (`migrations.py`) - Safe schema evolution with backups
+- **Store class** (`store.py`) - VIN-based deduplication and file storage
+- **Desirability scoring** (`desirability.py`) - Multi-criteria ranking algorithm
 
-### Frontend (Browser Extension)
-- **Browser extension** (`gti-extension/`) - Chrome/Brave extension for CarGurus.com
-- **Content script** (`content.js`) - Extracts listing data, sends to local Flask API
-- **Smart toast notifications** - Success/update/no-change feedback to user
-- **Robust selectors** - Multiple fallback strategies for brittle generated class names
+### Frontend & Extension
+- **Browser extension** (`gti-extension/`) - Multi-site car listing extraction
+- **Web interface** - Responsive listings display with sorting and individual detail pages
+- **Template system** - Jinja2 inheritance for maintainable UI
 
-### Web Interface - Template System
-- **Templates** (`templates/`) - Jinja2 templates with inheritance:
-  - `base.html` - Common layout and styling foundation
-  - `index.html` - Main listings page with responsive card grid
-  - `listing_detail.html` - Individual listing detail page
-- **Listings display** - Responsive card-based layout at `http://127.0.0.1:5000/`
-- **Individual listing pages** - Detailed view at `/listing/<id>` ready for editable fields
-- **Dual sorting options** - Sort by price (low to high) or desirability score (high to low)
-- **Desirability scores** - Visual star ratings displayed on each listing card
-- **Navigation** - Breadcrumb navigation and clickable listing titles
+### Data Architecture
+- **Multi-site URLs** - Each listing tracks URLs from multiple car sites
+- **VIN deduplication** - Merge data across sites using VIN as primary key
+- **Individual JSON files** - One file per listing with VIN index for fast lookups
 
-## Key Features Working
+## Core Features
 
-### Data Collection
-- **VIN-based deduplication** with intelligent upsert behavior
-- **Title and location extraction** with multiple selector fallbacks
-- **Required fields**: url, price, year, mileage, vin
-- **Optional fields**: title, location, distance, drivetrain, exterior_color, interior_color, mpg, engine, fuel_type, transmission, trim_level, car_title, accidents, previous_owners, phone_number
-- **Distance extraction**: Automatically extracted from location text patterns like "City, State (123 mi away)" and stored as numeric strings for sorting
-- **Desirability scoring**: Multi-criteria analysis ranking cars by price, mileage, year, and distance
-- **Change detection**: Updates existing listings with new/changed data only
+### Multi-Site Data Collection
+- **VIN-based deduplication** - Merges data across CarGurus, AutoTrader, Cars.com
+- **Automatic distance extraction** - From location text like "City, State (123 mi away)"
+- **Field mapping system** - Handles site-specific data variations
+- **Change detection** - Only updates when meaningful data changes
 
-### User Experience
-- **Smart notifications**: Different messages for new/updated/no-change
-- **URL validation**: Only works on CarGurus listing pages
-- **Error handling**: Clear feedback for missing fields or connection issues
-- **Auto-reload**: Flask restarts automatically on code changes
+### Desirability Scoring
+- **Weighted normalization** (0-100 scale): Price 40%, Mileage 30%, Year 20%, Distance 10%
+- **Real-time calculation** - Scores update with current data context
+- **Visual rankings** - Star ratings on listing cards with dual sort options
 
-### Data Integrity
-- **Comprehensive logging** to `app.log` with change summaries
-- **Defensive directory creation** - handles missing data folders gracefully
-- **Robust error handling** throughout stack
+### Data Safety & Migration
+- **Migration framework** - Safe schema evolution with automatic backups
+- **Comprehensive logging** - Full audit trail of changes and migrations
+- **Data validation** - Required vs optional field distinction
 
-### Desirability Algorithm
-- **Multi-criteria decision analysis** using weighted normalization (0-100 scale)
-- **Current weights**: Price (40%), Mileage (30%), Year (20%), Distance (10%)
-- **Normalization approach**: Lower price/mileage/distance = higher score, newer year = higher score
-- **Extensible design**: Ready for additional factors (accidents, trim level, etc.)
-- **Real-time calculation**: Scores computed on each page load with current data context
-
-### Desirability Enhancement Roadmap
-
-**Phase 1: Qualitative Factors (Next Priority)**
-- **Accident penalties**: Subtract points for reported accidents (e.g., -10 per accident)
-- **Title bonuses**: Clean title +5, salvage title -20, lemon title -30
-- **Owner count penalties**: More previous owners = lower score (e.g., -2 per owner over 2)
-- **Trim level preferences**: User-configurable preferences for SE/Autobahn/etc.
-
-**Phase 2: Advanced Scoring Features**
-- **User-configurable weights**: Allow adjustment of price/mileage/year/distance importance
-- **Distance cost calculation**: Factor in gas costs for round-trip ($0.65/mile * 2)
-- **Effective price**: `price + (distance * gas_cost)` for true cost comparison
-- **Market value analysis**: Compare against KBB/Edmunds for deal quality assessment
-
-**Phase 3: Machine Learning Approach**
-- **Historical learning**: Track which cars user actually contacts/visits/buys
-- **Behavioral weights**: Automatically adjust weights based on user actions
-- **Feature engineering**: 
-  - `price_per_year = price / (2024 - year)` - depreciation efficiency
-  - `miles_per_year = mileage / (2024 - year)` - usage patterns
-  - `deal_quality = (market_value - price) / market_value` - bargain detection
-
-**Phase 4: Advanced Features**
-- **Composite features**: Miles per year, price per year, depreciation curves
-- **Market context**: Compare to similar listings (relative desirability)
-- **Predictive scoring**: Estimate likelihood of quick sale based on market data
-- **Portfolio optimization**: Suggest best combination of cars to visit in one trip
-
-**Implementation Notes for Future Claude:**
-- **Approach 1 (Current)**: Weighted normalization - most interpretable and tunable
-- **Approach 2**: Value-per-dollar with distance penalty - good for budget focus
-- **Approach 3**: Pareto efficiency ranking - academic approach, less intuitive
-- **Approach 4**: ML feature engineering - most sophisticated, requires data
-
-**Extension Strategy:**
-- Start with qualitative penalties/bonuses (easy wins)
-- Add user preference controls (weight sliders in UI)
-- Implement behavioral learning (track user actions)
-- Eventually explore ML approaches with sufficient data
-
-The current foundation supports all these enhancements - the weighted normalization approach is perfect for "growing into" more sophisticated analysis while maintaining interpretability.
+### Next Priorities
+- **Multi-site extraction** - Add AutoTrader and Cars.com selectors to extension
+- **Qualitative scoring factors** - Accident penalties, title bonuses, owner count penalties
+- **User preferences** - Configurable weights and trim level preferences
 
 ## Development Workflow
 
-### Essential Commands
+### Essential Commands (ALWAYS activate venv first)
 ```bash
 # Start Flask app (auto-reloads on changes)
 source venv/bin/activate && python app.py
 
-# Run all tests (ALWAYS activate venv first)
+# Run all tests
 source venv/bin/activate && python -m pytest -v
 
-# Run specific test file (ALWAYS activate venv first)
-source venv/bin/activate && python -m pytest test_store.py -v
-
-# Install new dependencies
-source venv/bin/activate && pip install package_name
+# Run migrations  
+source venv/bin/activate && python migrations.py migrate-urls
 ```
 
-### Browser Extension Development
-1. Load unpacked extension in Chrome/Brave (`chrome://extensions/`)
-2. Enable "Developer mode" toggle
-3. Point to `gti-extension/` directory
-4. **After code changes**: Click reload button on extension card
-5. Test on CarGurus listing pages (URLs with `viewDetailsFilterViewInventoryListing.action`)
+### Development Workflow
+1. **Test-driven development** - Add tests for new features
+2. **Incremental changes** - Small, focused commits
+3. **Git commits** - Always commit completed tasks with "🤖 Generated with Claude Code" footer
 
-### Git Workflow
-- **Always create git commit at end of every completed task**
-- Use descriptive commit messages with bullet points
-- Include "🤖 Generated with Claude Code" footer
-- Add new files/patterns to `.gitignore` as needed
-- Current ignored: `*.log`, `__pycache__/`, `data/`, `.pytest_cache/`, `*.pyc`, `app_old.py`
+## Testing Strategy
 
-## Testing Philosophy
+**Goal**: Comprehensive test coverage to minimize debug loops. Currently 83+ tests covering unit, integration, and migration scenarios.
 
-**Goal**: Minimize debug loops by catching errors autonomously through comprehensive testing.
-
-### Current Coverage (83 tests)
-- **Unit tests**: Store class, listing utilities, distance extraction - VIN deduplication, upserts, file operations
-- **Integration tests**: Flask endpoints - API functionality, individual pages, error handling, CORS, CSV export
-- **Comprehensive coverage**: All major features tested with edge cases and error scenarios
-
-### Testing Approach
-- **Isolated test environments** - each test uses dedicated Flask app with temporary store
-- **Comprehensive fixtures** for reusable test data
-- **Error scenario coverage** - missing fields, invalid data, file system issues
-- **pytest configuration** with verbose output and clean tracebacks
-- **Add tests when adding features** to maintain safety net
-- **Modular test structure** - mirrors application structure for easy maintenance
+**Key principle**: Add tests when adding features to maintain safety net.
 
 ## Context Management
 
 ### After Context Compaction
-- **ALWAYS re-read CLAUDE.md first** to refresh project understanding
-- **Review recent commits** to understand latest changes
-- **Check current file structure** and test status before proceeding
-
-### Context Window Optimization
-- **Read files strategically** - full files when context is needed, targeted sections when possible
-- **Use search tools efficiently** - Grep and Glob before reading entire codebases
-- **Batch tool calls** when performing related operations
-- **Focus summaries** on technical decisions, implementation patterns, and user requirements
-
-### File Reading Strategy
-- **When editing**: Read entire file to understand current state and context
-- **When searching**: Use targeted search tools before broader file reads
-- **When debugging**: Read related files to understand data flow and dependencies
+- **FIRST STEP**: Re-read CLAUDE.md to refresh understanding
+- **NEXT**: Review recent commits and current file structure 
+- **THEN**: Begin task with strategic file reading and tool use
 
 ## Development Guidelines
 
-### Incremental Approach
-- **Highly incremental development** - small testable steps
-- **Avoid doing too much at once** to prevent bugfixing spirals
-- **Keep files focused and cohesive** - separate concerns clearly
-- **Verify each step before proceeding** to next feature
-- **Break complex features into multiple commits**
-
-### Code Organization
-- **Modular design** - separate concerns into focused modules
-- **Template inheritance** - base templates with specialized extensions
-- **Route organization** - logical grouping by functionality
-- **Light refactoring** when adding features, not wholesale rewrites
-- **Defensive programming** - handle missing directories, network failures, etc.
-- **Comprehensive logging** for debugging and monitoring
-
-### Field Management
-- **Required vs Optional distinction** is crucial for future expansion
-- **Optional fields preserved** when new extraction provides None/empty values
-- **Change detection** only triggers on meaningful value differences
-- **Extensible field system** ready for additional data types
-
-## Recent Major Changes
-
-### App.py Refactoring (July 2025)
-- **Broke down 600+ line monolithic app.py** into focused modules
-- **Introduced template system** with proper Jinja2 inheritance
-- **Created individual listing pages** at `/listing/<id>` as foundation for editable fields
-- **Improved test isolation** with dedicated test Flask app
-- **Enhanced maintainability** with clear separation of concerns
-
-### Individual Listing Pages
-- **Detailed car view** with enhanced styling and layout
-- **Navigation breadcrumbs** for better user experience
-- **Prominent VIN display** and metadata sections
-- **Action buttons** for external links and navigation
-- **Future enhancement area** clearly marked for user-editable fields
-
-## Future Expansion Areas
-
-### User-Editable Fields (Next Priority)
-- **Personal notes** - text area for user comments and observations
-- **Favorites system** - bookmark interesting listings
-- **Custom tags** - user-defined categories and labels
-- **Price alerts** - notifications when price changes
-- **Comparison tools** - side-by-side listing comparison
-
-### Additional Fields
-- **Simple fields first** (dealer info, listing age, trim levels)
-- **Complex fields later** (images, detailed specs, package detection)
-- **Calculated fields** (price per mile, depreciation estimates)
-
-### Multiple Sites Support
-- **Site-specific extraction scripts** with shared core logic
-- **Field variation handling** (some sites have different available data)
-- **Fallback strategies** for missing data across sites
-
-### Extension Functionality
-- **Additional car sites** beyond CarGurus
-- **Improved extraction reliability** with better selectors
-- **Batch operations** and automation features
-- **Site-specific customizations**
-
-### Storage Layer Evolution
-- **Loose coupling** to enable backend changes later
-- **Potential migration** to SQLite, PostgreSQL, or cloud storage
-- **Maintain VIN-based deduplication** regardless of backend
-
-### Web Interface Improvements
-- **Filtering and sorting** options beyond price
-- **Export functionality** (CSV, spreadsheets)
-- **Image previews** when available from listings
-- **Advanced search and comparison** tools
-- **User management** for multi-user scenarios
-- **Dashboard analytics** - market trends, price analysis
+- **Incremental approach** - Small, testable steps with focused commits
+- **Modular design** - Clear separation of concerns across files
+- **Defensive programming** - Handle missing directories, network failures, etc.
+- **Field management** - Preserve optional fields, detect meaningful changes only
 
 ## Current Data Schema
 
-### Listing Object
+### Multi-Site Listing Structure
 ```json
 {
   "id": "uuid",
   "data": {
-    "url": "string (required)",
-    "price": "string (required)",
-    "year": "string (required)",
-    "mileage": "string (required)",
-    "distance": "string (optional, auto-extracted as numeric from location)",
-    "vin": "string (required, unique)",
-    "title": "string (optional)",
-    "location": "string (optional)",
-    "drivetrain": "string (optional, extracted from H5 fields)",
-    "exterior_color": "string (optional, extracted from H5 fields)",
-    "interior_color": "string (optional, extracted from H5 fields)",
-    "mpg": "string (optional, extracted from H5 fields)",
-    "engine": "string (optional, extracted from H5 fields)",
-    "fuel_type": "string (optional, extracted from H5 fields)",
-    "transmission": "string (optional, extracted from H5 fields)",
-    "trim_level": "string (optional, extracted from trim data attribute)",
-    "car_title": "string (optional, combined title + description from categories)",
-    "accidents": "string (optional, combined accident info from categories)",
-    "previous_owners": "string (optional, combined owner info from categories)",
-    "phone_number": "string (optional, extracted from call button)"
-  }
+    "urls": {"cargurus": "url", "autotrader": "url"},
+    "last_updated_site": "cargurus",
+    "sites_seen": ["cargurus", "autotrader"],
+    "price": "string", "year": "string", "mileage": "string", "vin": "string",
+    "distance": "numeric string", "title": "string", "location": "string",
+    "trim_level": "string", "accidents": "string", "previous_owners": "string"
+  },
+  "comments": "user-editable text"
 }
 ```
 
-### API Responses
-- **201**: New listing created
-- **200**: Listing updated or no changes detected
-- **400**: Validation errors (missing fields, invalid JSON)
-- **500**: Server errors
+## Technical Notes
 
-## Important Notes
+### CarGurus Extraction Patterns
+- **Selectors**: `data-cg-ft="vdp-listing-title"`, multiple fallbacks for brittle class names
+- **Distance extraction**: From location text like "Cleveland, OH (15 mi away)"
 
-### CarGurus Extraction
-- **Primary selectors**: `data-cg-ft="vdp-listing-title"`, `hgroup._group_s8u01_1`
-- **Fallback strategies**: Multiple class name attempts, regex patterns
-- **Brittle class names**: `oqywn`, `sCSIz` may change - always provide fallbacks
-- **Distance parsing**: Extract from location text like "Cleveland, OH (15 mi away)"
+### Extension Requirements  
+- **Manifest v3** with localhost permissions for CORS requests
 
-### Testing Requirements
-- **Test isolation**: Each test uses temporary directories
-- **Comprehensive scenarios**: Success, failure, edge cases, duplicates
-- **Async testing**: Flask test client for endpoint testing
-- **Pytest fixtures**: Reusable test data and setup/teardown
-
-### Extension Permissions
-- **Manifest v3** with explicit localhost permissions
-- **Content scripts** only on CarGurus domains
-- **CORS headers** required for cross-origin requests to localhost
-
-## Current File Structure
+## File Structure
 
 ```
 gti-listings/
-├── app.py                 # Main Flask application
-├── config.py              # Configuration and logging setup
-├── store.py               # Data storage and VIN deduplication
-├── listing_utils.py       # Data comparison and merging utilities
-├── desirability.py        # Multi-criteria desirability scoring system
-├── routes/                # Route handlers by functionality
-│   ├── __init__.py
-│   ├── listings.py        # Main listing page and POST endpoint
-│   ├── individual.py      # Individual listing detail pages
-│   └── health.py          # Health check endpoint
-├── templates/             # Jinja2 templates
-│   ├── base.html          # Common layout and styling
-│   ├── index.html         # Main listings page
-│   └── listing_detail.html # Individual listing detail page
-├── gti-extension/         # Browser extension
-│   ├── manifest.json
-│   ├── content.js
-│   └── popup.html
-├── test_app.py            # Flask endpoints tests
-├── test_store.py          # Store class tests
-├── test_listing_utils.py  # Utility tests
-├── test_distance_extraction.py # Distance extraction tests
-├── test_desirability.py   # Desirability scoring tests
-├── js-snippets/           # JavaScript development snippets
-├── data/                  # JSON file storage (gitignored)
-├── app.log                # Application logs (gitignored)
-└── CLAUDE.md              # This documentation file
+├── app.py, config.py, store.py          # Core Flask app and storage
+├── migrations.py                        # Data migration framework  
+├── desirability.py, site_mappings.py    # Scoring and multi-site support
+├── routes/                              # Route handlers
+├── templates/                           # Jinja2 templates
+├── gti-extension/                       # Browser extension
+├── test_*.py                            # Comprehensive test suite
+├── data/                                # JSON listings (gitignored)
+└── CLAUDE.md                            # This documentation
 ```
 
-This modular architecture supports confident iteration and feature expansion while maintaining data integrity, user experience quality, and code maintainability.
+**REMEMBER**: Always read CLAUDE.md first after context compaction, then ask clarifying questions before starting tasks.
