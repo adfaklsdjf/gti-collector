@@ -67,6 +67,48 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Extensible design**: Ready for additional factors (accidents, trim level, etc.)
 - **Real-time calculation**: Scores computed on each page load with current data context
 
+### Desirability Enhancement Roadmap
+
+**Phase 1: Qualitative Factors (Next Priority)**
+- **Accident penalties**: Subtract points for reported accidents (e.g., -10 per accident)
+- **Title bonuses**: Clean title +5, salvage title -20, lemon title -30
+- **Owner count penalties**: More previous owners = lower score (e.g., -2 per owner over 2)
+- **Trim level preferences**: User-configurable preferences for SE/Autobahn/etc.
+
+**Phase 2: Advanced Scoring Features**
+- **User-configurable weights**: Allow adjustment of price/mileage/year/distance importance
+- **Distance cost calculation**: Factor in gas costs for round-trip ($0.65/mile * 2)
+- **Effective price**: `price + (distance * gas_cost)` for true cost comparison
+- **Market value analysis**: Compare against KBB/Edmunds for deal quality assessment
+
+**Phase 3: Machine Learning Approach**
+- **Historical learning**: Track which cars user actually contacts/visits/buys
+- **Behavioral weights**: Automatically adjust weights based on user actions
+- **Feature engineering**: 
+  - `price_per_year = price / (2024 - year)` - depreciation efficiency
+  - `miles_per_year = mileage / (2024 - year)` - usage patterns
+  - `deal_quality = (market_value - price) / market_value` - bargain detection
+
+**Phase 4: Advanced Features**
+- **Composite features**: Miles per year, price per year, depreciation curves
+- **Market context**: Compare to similar listings (relative desirability)
+- **Predictive scoring**: Estimate likelihood of quick sale based on market data
+- **Portfolio optimization**: Suggest best combination of cars to visit in one trip
+
+**Implementation Notes for Future Claude:**
+- **Approach 1 (Current)**: Weighted normalization - most interpretable and tunable
+- **Approach 2**: Value-per-dollar with distance penalty - good for budget focus
+- **Approach 3**: Pareto efficiency ranking - academic approach, less intuitive
+- **Approach 4**: ML feature engineering - most sophisticated, requires data
+
+**Extension Strategy:**
+- Start with qualitative penalties/bonuses (easy wins)
+- Add user preference controls (weight sliders in UI)
+- Implement behavioral learning (track user actions)
+- Eventually explore ML approaches with sufficient data
+
+The current foundation supports all these enhancements - the weighted normalization approach is perfect for "growing into" more sophisticated analysis while maintaining interpretability.
+
 ## Development Workflow
 
 ### Essential Commands
