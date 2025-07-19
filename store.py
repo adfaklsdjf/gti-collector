@@ -13,6 +13,7 @@ import logging
 from datetime import datetime
 from listing_utils import compare_listing_data, format_change_summary
 from site_mappings import merge_site_data
+from schema_migrations import SchemaMigrator
 
 logger = logging.getLogger(__name__)
 
@@ -29,14 +30,26 @@ class Store:
         self.indices_dir.mkdir(parents=True, exist_ok=True)
         
         self.vin_index_file = self.indices_dir / 'vin_to_id.json'
+        self.migrator = SchemaMigrator(str(self.data_dir))
         self.vin_index = self._load_vin_index()
     
     def _load_vin_index(self):
         """Load VIN to file ID mapping."""
         if self.vin_index_file.exists():
             try:
+                # Check if JIT migration is needed
+                if not self.migrator.migrate_file_jit(self.vin_index_file):
+                    logger.error("JIT migration failed for VIN index")
+                
                 with open(self.vin_index_file, 'r') as f:
-                    return json.load(f)
+                    index_data = json.load(f)
+                
+                # Handle schema-versioned structure
+                if 'vin_mappings' in index_data:
+                    return index_data['vin_mappings']
+                else:
+                    # Fallback for old structure
+                    return {k: v for k, v in index_data.items() if k != 'schema_version'}
             except Exception as e:
                 logger.error(f"Error loading VIN index: {e}")
                 return {}
@@ -47,8 +60,16 @@ class Store:
         try:
             # Ensure directories exist before saving
             self.indices_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Save in schema-versioned format
+            current_version = self.migrator.get_current_schema_version()
+            index_data = {
+                'schema_version': current_version,
+                'vin_mappings': self.vin_index
+            }
+            
             with open(self.vin_index_file, 'w') as f:
-                json.dump(self.vin_index, f, indent=2)
+                json.dump(index_data, f, indent=2)
         except Exception as e:
             logger.error(f"Error saving VIN index: {e}")
     
@@ -172,6 +193,10 @@ class Store:
         
         for listing_file in self.data_dir.glob("*.json"):
             try:
+                # Check if JIT migration is needed
+                if not self.migrator.migrate_file_jit(listing_file):
+                    logger.warning(f"JIT migration failed for {listing_file}")
+                
                 with open(listing_file, 'r', encoding='utf-8') as f:
                     listing_data = json.load(f)
                     # Ensure comments field exists for backward compatibility
@@ -196,6 +221,10 @@ class Store:
             return None
         
         try:
+            # Check if JIT migration is needed
+            if not self.migrator.migrate_file_jit(listing_file):
+                logger.warning(f"JIT migration failed for {listing_file}")
+            
             with open(listing_file, 'r', encoding='utf-8') as f:
                 listing_data = json.load(f)
                 # Ensure comments field exists for backward compatibility
