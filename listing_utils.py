@@ -27,11 +27,12 @@ def compare_listing_data(existing_data, new_data):
     changes = {}
     updated_data = existing_data.copy()
     
-    # Fields to compare (excluding metadata)
+    # Fields to compare (excluding metadata and multi-site specific fields)
     comparable_fields = [
-        'url', 'price', 'year', 'mileage', 'distance', 'vin', 'title', 'location',
+        'price', 'year', 'mileage', 'distance', 'vin', 'title', 'location',
         'drivetrain', 'exterior_color', 'interior_color', 'mpg', 'engine', 'fuel_type', 'transmission',
-        'trim_level', 'car_title', 'accidents', 'previous_owners', 'phone_number'
+        'trim_level', 'car_title', 'accidents', 'previous_owners', 'phone_number',
+        'urls', 'sites_seen', 'last_updated_site'  # Multi-site fields
     ]
     
     for field in comparable_fields:

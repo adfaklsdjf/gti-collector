@@ -199,6 +199,14 @@ def calculate_desirability_score(listing: Dict[str, Any], all_listings: List[Dic
         all_years = [l.get('data', {}).get('year', '') for l in all_listings]
         all_distances = [l.get('data', {}).get('distance') for l in all_listings]
         
+        # Check for required fields - give zero score if any are missing
+        required_fields = ['price', 'year', 'mileage', 'distance']
+        missing_fields = [field for field in required_fields if not data.get(field)]
+        
+        if missing_fields:
+            logger.warning(f"⚠️ Cannot calculate desirability for {data.get('vin', 'unknown')} - missing fields: {missing_fields}")
+            return 0.0
+        
         # Calculate individual normalized scores
         price_score = normalize_price(data.get('price', ''), all_prices)
         mileage_score = normalize_mileage(data.get('mileage', ''), all_mileages)

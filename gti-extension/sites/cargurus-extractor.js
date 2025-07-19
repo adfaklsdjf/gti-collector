@@ -1,82 +1,32 @@
-console.log("🚗 GTI Extension content script injected");
+/**
+ * CarGurus-specific data extraction logic
+ */
 
-// Create toast notification
-function showToast(message, type = 'info', duration = 3000) {
-  // Remove any existing toast
-  const existingToast = document.getElementById('gti-extension-toast');
-  if (existingToast) {
-    existingToast.remove();
-  }
-
-  // Create toast element
-  const toast = document.createElement('div');
-  toast.id = 'gti-extension-toast';
-  toast.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 10000;
-    padding: 12px 20px;
-    border-radius: 8px;
-    color: white;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    transition: all 0.3s ease;
-    max-width: 300px;
-    word-wrap: break-word;
-  `;
-
-  // Set color based on type
-  const colors = {
-    success: '#10B981',
-    error: '#EF4444',
-    warning: '#F59E0B',
-    info: '#3B82F6',
-    duplicate: '#8B5CF6'
-  };
-  toast.style.backgroundColor = colors[type] || colors.info;
-
-  // Set message
-  toast.textContent = message;
-
-  // Add to page
-  document.body.appendChild(toast);
-
-  // Auto-remove after duration
-  setTimeout(() => {
-    if (toast.parentNode) {
-      toast.style.opacity = '0';
-      toast.style.transform = 'translateX(100%)';
-      setTimeout(() => toast.remove(), 300);
-    }
-  }, duration);
-}
-
-// Check if this is a CarGurus listing page
-function isCarGurusListingPage() {
-  return window.location.hostname.includes('cargurus.com') &&
-         (window.location.pathname.includes('/vdp.action') ||
-          window.location.pathname.includes('viewDetailsFilterViewInventoryListing.action'));
-}
-
-// Extract car details from CarGurus page
-function extractCarGurusDetails() {
+/**
+ * Extract car details from CarGurus listing page
+ * @returns {object} Extracted car details
+ */
+function extractCarGurusListing() {
+  console.log('🚗 Starting CarGurus extraction...');
+  
   const carDetails = {
+    site: 'cargurus',
     url: window.location.href
   };
 
-  // Extract title using robust selectors
+  // Extract title
+  console.log("Attempting to extract title...");
   const titleElement = document.querySelector('h1[data-cg-ft="vdp-listing-title"]') ||
-                      document.querySelector('._listingHeading_s8u01_6') ||
-                      document.querySelector('h1.oqywn._0ZnFt') ||
                       document.querySelector('h1');
   if (titleElement) {
     carDetails.title = titleElement.textContent.trim();
+    console.log(`Extracted title: "${carDetails.title}"`);
+  } else {
+    console.log("Could not find title element");
   }
 
-  // Extract location from the paragraph following the title
+  // Extract location and distance
+  console.log("Attempting to extract location...");
   const locationElement = document.querySelector('hgroup._group_s8u01_1 p.oqywn.sCSIz') ||
                          document.querySelector('h1[data-cg-ft="vdp-listing-title"] + p') ||
                          Array.from(document.querySelectorAll('p')).find(p =>
@@ -85,19 +35,26 @@ function extractCarGurusDetails() {
   if (locationElement) {
     const locationText = locationElement.textContent.trim();
     carDetails.location = locationText;
+    console.log(`Extracted location: "${locationText}"`);
 
-    // Try to parse distance more precisely from location
-    const distanceMatch = locationText.match(/\((\d+)\s*mi\s*away\)/i);
+    // Try to parse distance from location (simple extraction for CarGurus)
+    const distanceMatch = locationText.match(/\((\d+(?:,\d+)?)\s*mi\s*away\)/i);
     if (distanceMatch) {
-      carDetails.distance = `${distanceMatch[1]} mi away`;
+      carDetails.distance = distanceMatch[1].replace(',', ''); // Remove commas for numeric format
+      console.log(`Extracted distance: "${carDetails.distance}"`);
     }
+  } else {
+    console.log("Could not find location element");
   }
 
   // Extract price
+  console.log("Attempting to extract price...");
   const priceElement = document.querySelector('.oqywn.FieH9');
   if (priceElement) {
     carDetails.price = priceElement.textContent.trim();
+    console.log(`Extracted price: "${carDetails.price}"`);
   } else {
+    console.log("No primary price element found, searching for potential prices...");
     const potentialPrices = Array.from(document.querySelectorAll('body *')).filter(el => {
       const text = el.textContent.trim();
       const rect = el.getBoundingClientRect();
@@ -108,11 +65,12 @@ function extractCarGurusDetails() {
         return (prev.getBoundingClientRect().height < curr.getBoundingClientRect().height) ? prev : curr;
       });
       carDetails.price = smallestPriceElement.textContent.trim();
+      console.log(`Extracted price (fallback): "${carDetails.price}"`);
     }
   }
 
   // Extract mileage
-  // const mileageElement = document.querySelector('.oqywn.sCSIz._value_1fvwn_13');
+  console.log("Attempting to extract mileage...");
   const h5Element = Array.from(document.querySelectorAll('h5')).find(el => el.textContent.includes('Mileage'));
   const mileageElement = h5Element ? h5Element.nextElementSibling : null;
 
@@ -122,6 +80,7 @@ function extractCarGurusDetails() {
       console.log("It's even a paragraph element!");
     }
     carDetails.mileage = mileageElement.textContent.trim();
+    console.log(`Extracted mileage: "${carDetails.mileage}"`);
   } else {
     console.log("No mileageElement found, searching for potential mileage elements...");
     const potentialMileages = Array.from(document.querySelectorAll('body *')).filter(el => {
@@ -137,6 +96,7 @@ function extractCarGurusDetails() {
       } else {
         carDetails.mileage = potentialMileages[0].textContent.trim();
       }
+      console.log(`Extracted mileage (fallback): "${carDetails.mileage}"`);
     }
   }
 
@@ -237,134 +197,49 @@ function extractCarGurusDetails() {
   }
 
   // Extract year and VIN from records
+  console.log("Attempting to extract year and VIN...");
   const records = document.querySelectorAll('._record_1fvwn_1');
   records.forEach(record => {
     const text = record.textContent.trim();
     if (text.startsWith('Year:')) {
       carDetails.year = text.replace('Year:', '').trim();
+      console.log(`Extracted year: "${carDetails.year}"`);
     } else if (text.startsWith('VIN:')) {
       carDetails.vin = text.replace('VIN:', '').trim();
+      console.log(`Extracted VIN: "${carDetails.vin}"`);
     }
   });
 
   // Fallback year extraction
   if (!carDetails.year) {
+    console.log("Attempting fallback year extraction...");
     const yearElement = Array.from(document.querySelectorAll('body *')).find(el =>
       el.textContent.trim().match(/Year:\s*\d{4}/)
     );
     if (yearElement) {
-      carDetails.year = yearElement.textContent.trim().replace('Year:', '').trim();
+      const yearMatch = yearElement.textContent.trim().match(/Year:\s*(\d{4})/);
+      if (yearMatch) {
+        carDetails.year = yearMatch[1];
+        console.log(`Extracted year (fallback): "${carDetails.year}"`);
+      }
     }
   }
 
   // Fallback VIN extraction
   if (!carDetails.vin) {
+    console.log("Attempting fallback VIN extraction...");
     const vinElement = Array.from(document.querySelectorAll('body *')).find(el =>
-      el.textContent.trim().match(/VIN:\s*[A-HJ-NPR-Za-hj-npr-z0-9]{17}/i)
+      el.textContent.trim().match(/VIN:\s*[A-HJ-NPR-Z0-9]{17}/i)
     );
     if (vinElement) {
-      carDetails.vin = vinElement.textContent.trim().replace('VIN:', '').trim();
+      const vinMatch = vinElement.textContent.trim().match(/VIN:\s*([A-HJ-NPR-Z0-9]{17})/i);
+      if (vinMatch) {
+        carDetails.vin = vinMatch[1];
+        console.log(`Extracted VIN (fallback): "${carDetails.vin}"`);
+      }
     }
   }
 
-  // Add fallback distance if not extracted from location
-  if (!carDetails.distance) {
-    carDetails.distance = "Unknown";
-  }
-
+  console.log('✅ CarGurus extraction complete:', carDetails);
   return carDetails;
 }
-
-// Send data to Flask backend
-async function sendToBackend(carDetails) {
-  console.log('🚗 Complete car details being sent to backend:', carDetails);
-  try {
-    const response = await fetch('http://127.0.0.1:5000/listings', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(carDetails)
-    });
-
-    const result = await response.json();
-    console.log('📤 Backend response:', result);
-    return result;
-  } catch (error) {
-    console.error('❌ Error sending to backend:', error);
-    throw error;
-  }
-}
-
-// Main function when extension is activated
-function handleExtensionClick() {
-  // Detect current site and check if it's a supported listing page
-  const currentSite = detectCurrentSite();
-  if (!currentSite) {
-    showToast('❌ This site is not yet supported', 'error');
-    return;
-  }
-
-  if (!isListingPage(currentSite)) {
-    showToast(`❌ Please navigate to a ${getSiteConfig(currentSite).name} listing page`, 'error');
-    return;
-  }
-
-  console.log(`🔍 Extracting car details from ${getSiteConfig(currentSite).name}...`);
-  showToast("🔍 Extracting listing data...", 'info', 2000);
-
-  // Use site-specific extractor
-  let rawCarDetails = {};
-  switch (currentSite) {
-    case 'cargurus':
-      rawCarDetails = extractCarGurusListing();
-      break;
-    case 'autotrader':
-      rawCarDetails = extractAutoTraderListing();
-      break;
-    case 'cars':
-      rawCarDetails = extractCarsListing();
-      break;
-    default:
-      showToast(`❌ Extractor not implemented for ${currentSite}`, 'error');
-      return;
-  }
-
-  // Map site-specific fields to internal format
-  const carDetails = mapFieldsToInternal(rawCarDetails, currentSite);
-  console.log("📋 Extracted details:", carDetails);
-
-  // Validate required fields (title and location are optional but preferred)
-  const requiredFields = ['price', 'year', 'mileage', 'vin'];
-  const missingFields = requiredFields.filter(field => !carDetails[field]);
-
-  // Log optional fields status for debugging
-  if (!carDetails.title) console.warn('⚠️ Title not extracted');
-  if (!carDetails.location) console.warn('⚠️ Location not extracted');
-
-  if (missingFields.length > 0) {
-    showToast(`❌ Missing required fields: ${missingFields.join(', ')}`, 'error');
-    return;
-  }
-
-  // Send to backend
-  sendToBackend(carDetails)
-    .then(result => {
-      if (result.updated === true) {
-        // Listing was updated
-        showToast(`🔄 Listing updated successfully!`, 'success');
-      } else if (result.updated === false && result.message.includes('No changes')) {
-        // No changes detected
-        showToast(`ℹ️ No changes detected`, 'info');
-      } else {
-        // New listing created
-        showToast(`✅ NEW listing saved successfully!`, 'success');
-      }
-    })
-    .catch(error => {
-      showToast(`❌ Error: ${error.message}`, 'error');
-    });
-}
-
-// Replace the simple alert with our main function
-handleExtensionClick();

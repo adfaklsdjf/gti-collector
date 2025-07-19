@@ -11,6 +11,7 @@ import io
 import re
 from flask import request, jsonify, render_template, make_response
 from desirability import add_desirability_scores
+from site_mappings import process_site_data, merge_site_data, check_desirability_completeness
 
 logger = logging.getLogger(__name__)
 
@@ -85,18 +86,22 @@ def create_listings_routes(app, store):
                 return jsonify({'error': 'No JSON data provided'}), 400
             
             # Log received data for debugging
-            logger.info(f"📥 Received listing data: {data}")
+            site_name = data.get('site', 'unknown')
+            logger.info(f"📥 Received listing data from {site_name}: {data}")
             
-            # Basic field check - core fields are required, title/location/distance are optional
-            required_fields = ['url', 'price', 'year', 'mileage', 'vin']
-            missing_fields = [field for field in required_fields if field not in data]
+            # Process site-specific data into internal format
+            processed_data = process_site_data(data)
+            
+            # Apply any needed derivations (e.g., distance from location)
+            processed_data = process_listing_data(processed_data)
+            
+            # Basic field check - core fields are required for any listing
+            required_fields = ['price', 'year', 'mileage', 'vin']
+            missing_fields = [field for field in required_fields if field not in processed_data]
             
             if missing_fields:
                 logger.error(f"Missing required fields: {missing_fields}")
                 return jsonify({'error': f'Missing required fields: {missing_fields}'}), 400
-            
-            # Process listing data to extract distance from location if needed
-            processed_data = process_listing_data(data)
             
             # Attempt to store or update the listing
             result = store.add_listing(processed_data)
@@ -140,6 +145,14 @@ def create_listings_routes(app, store):
             
             # Calculate desirability scores for all listings
             if listings:
+                # Check for listings with missing desirability fields
+                for listing in listings:
+                    is_complete, missing_fields = check_desirability_completeness(listing.get('data', {}))
+                    if not is_complete:
+                        logger.warning(f"⚠️ Listing {listing.get('id', 'unknown')} missing desirability fields: {missing_fields}")
+                        # Add warning flag for UI display
+                        listing['desirability_warning'] = f"Missing: {', '.join(missing_fields)}"
+                
                 listings = add_desirability_scores(listings)
             
             # Get sort parameter from query string

@@ -266,9 +266,20 @@
         </div>
 
         <div class="action-buttons">
-            <a href="{{ listing.data.url }}" target="_blank" class="btn btn-primary">
-                View Original Listing →
-            </a>
+            {% if listing.data.urls %}
+                {% for site, url in listing.data.urls.items() %}
+                    <a href="{{ url }}" target="_blank" 
+                       class="btn {{ 'btn-primary' if site == listing.data.last_updated_site else 'btn-secondary' }}"
+                       title="View on {{ site|title }}">
+                        View on {{ site|title }} →
+                    </a>
+                {% endfor %}
+            {% elif listing.data.url %}
+                <!-- Fallback for old single-URL format -->
+                <a href="{{ listing.data.url }}" target="_blank" class="btn btn-primary">
+                    View Original Listing →
+                </a>
+            {% endif %}
             <a href="/" class="btn btn-secondary">
                 Back to All Listings
             </a>

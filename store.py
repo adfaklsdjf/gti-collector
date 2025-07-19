@@ -12,6 +12,7 @@ from pathlib import Path
 import logging
 from datetime import datetime
 from listing_utils import compare_listing_data, format_change_summary
+from site_mappings import merge_site_data
 
 logger = logging.getLogger(__name__)
 
@@ -123,8 +124,11 @@ class Store:
             
             existing_data = existing_listing['data']
             
-            # Compare and merge data
-            comparison = compare_listing_data(existing_data, new_data)
+            # Merge multi-site data (handles URLs and site tracking)
+            merged_data = merge_site_data(existing_data, new_data)
+            
+            # Compare and merge data for change detection
+            comparison = compare_listing_data(existing_data, merged_data)
             
             if not comparison['has_changes']:
                 logger.info(f"No changes detected for listing {listing_id}")
@@ -139,7 +143,7 @@ class Store:
             # Update the listing (preserve comments field)
             updated_listing = {
                 'id': listing_id,
-                'data': comparison['updated_data'],
+                'data': merged_data,
                 'comments': existing_listing.get('comments', '')  # Preserve existing comments
             }
             
