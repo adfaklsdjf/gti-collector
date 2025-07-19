@@ -264,7 +264,7 @@ function deleteListing(listingId, vin, button) {
     .then(response => response.json())
     .then(data => {
         if (data.message) {
-            console.log(`Success: ${data.message}`);
+            showToast(`Success: ${data.message}`, 'success');
             // Remove the listing card from the page
             button.closest('.listing-card').remove();
 

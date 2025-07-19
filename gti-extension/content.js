@@ -143,7 +143,7 @@ function extractCarGurusDetails() {
   // Extract additional vehicle details using H5 + next element pattern
   const vehicleFields = [
     'Drivetrain',
-    'Exterior Color', 
+    'Exterior Color',
     'Interior Color',
     'MPG',
     'Engine',
@@ -153,11 +153,11 @@ function extractCarGurusDetails() {
 
   console.log("Attempting to extract additional vehicle fields...");
   vehicleFields.forEach(fieldName => {
-    const h5Element = Array.from(document.querySelectorAll('h5')).find(el => 
+    const h5Element = Array.from(document.querySelectorAll('h5')).find(el =>
       el.textContent.includes(fieldName)
     );
     const valueElement = h5Element ? h5Element.nextElementSibling : null;
-    
+
     if (valueElement) {
       const fieldKey = fieldName.toLowerCase().replace(' ', '_');
       const fieldValue = valueElement.textContent.trim();
@@ -193,16 +193,16 @@ function extractCarGurusDetails() {
   const categoriesDiv = document.querySelector('div._elements_1rs20_1');
   if (categoriesDiv) {
     const categoryElements = categoriesDiv.querySelectorAll(':scope > ._category_1jffh_1');
-    
+
     categoryElements.forEach(categoryDiv => {
       const heading = categoryDiv.querySelector('h4');
       const paragraph = categoryDiv.querySelector('p');
-      
+
       if (heading && paragraph) {
         const title = heading.textContent.trim();
         const description = paragraph.textContent.trim();
         const combinedText = `${title} - ${description}`;
-        
+
         // Determine which field this belongs to based on title content
         if (title.toLowerCase().includes('title')) {
           carDetails.car_title = combinedText;
@@ -333,7 +333,7 @@ function handleExtensionClick() {
         showToast(`ℹ️ No changes detected`, 'info');
       } else {
         // New listing created
-        showToast(`✅ New listing saved successfully!`, 'success');
+        showToast(`✅ NEW listing saved successfully!`, 'success');
       }
     })
     .catch(error => {

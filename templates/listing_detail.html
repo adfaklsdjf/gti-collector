@@ -377,7 +377,7 @@ function deleteListing(listingId, vin) {
     .then(response => response.json())
     .then(data => {
         if (data.message) {
-            alert(`Success: ${data.message}`);
+            showToast(`Success: ${data.message}`, 'success');
             // Redirect to main listings page
             window.location.href = '/';
         } else {
