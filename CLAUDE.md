@@ -14,6 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Backend Components
 - **Flask app** (`app.py`) - Main application with modular routes and pre-flight migration checks
+- **PID lock system** (`pidlock.py`) - Single-instance enforcement with graceful signal handling
 - **Schema migration system** (`schema_migrations.py`) - Drupal-style versioned migrations with per-file tracking
 - **Multi-site support** (`site_mappings.py`) - Site detection and field mapping
 - **Store class** (`store.py`) - VIN-based deduplication with just-in-time migration support
@@ -71,6 +72,12 @@ source venv/bin/activate && python schema_migrations.py check
 source venv/bin/activate && python schema_migrations.py preflight
 source venv/bin/activate && python schema_migrations.py list-migrations
 ```
+
+### Single Instance & Process Management
+- **PID lock enforcement** - Prevents multiple app instances running simultaneously
+- **Graceful signal handling** - SIGINT (Ctrl+C) and SIGTERM trigger proper shutdown
+- **Process safety checks** - Validates existing processes before startup
+- **Automatic cleanup** - PID files removed on normal or signal-triggered shutdown
 
 ### Development Workflow
 1. **Test-driven development** - Add tests for new features
@@ -141,6 +148,7 @@ source venv/bin/activate && python schema_migrations.py list-migrations
 ```
 gti-listings/
 ├── app.py, config.py, store.py          # Core Flask app and storage
+├── pidlock.py                           # Single-instance PID lock management
 ├── schema_migrations.py                 # Schema versioning migration system
 ├── migrations/                          # Versioned migration files (v001, v002, etc.)
 ├── desirability.py, site_mappings.py    # Scoring and multi-site support
@@ -148,8 +156,10 @@ gti-listings/
 ├── templates/                           # Jinja2 templates
 ├── gti-extension/                       # Browser extension
 ├── test_*.py                            # Comprehensive test suite
+├── requirements.txt                     # Python dependencies (includes psutil)
 ├── data/                                # JSON listings (gitignored)
 ├── backups/                             # Migration backups (gitignored)
+├── gti-listings.pid                     # PID lock file (gitignored, auto-cleaned)
 └── CLAUDE.md                            # This documentation
 ```
 

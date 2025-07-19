@@ -12,13 +12,24 @@ from routes.listings import create_listings_routes
 from routes.individual import create_individual_routes
 from routes.health import create_health_routes
 from schema_migrations import SchemaMigrator
+from pidlock import PidLock
 
 # Setup logging
 logger = setup_logging()
 
 def run_preflight_checks():
-    """Run pre-flight checks including schema migrations."""
+    """Run pre-flight checks including PID lock and schema migrations."""
     logger.info("🔍 Running pre-flight checks...")
+    
+    # Check PID lock to prevent multiple instances
+    pidlock = PidLock()
+    if not pidlock.acquire():
+        # Another instance is running or PID conflict
+        exit(1)
+    
+    # Register signal handlers for graceful shutdown
+    pidlock.register_cleanup()
+    logger.info("🛡️ PID lock acquired and signal handlers registered")
     
     # Check and run schema migrations if needed
     migrator = SchemaMigrator()

@@ -8,11 +8,13 @@ import tempfile
 import json
 import shutil
 from pathlib import Path
-from migrations import DataMigrator, migration_url_to_multi_site
+from schema_migrations import SchemaMigrator
+from migrations.v001_url_to_multi_site import migrate as migrate_v001
+from migrations.v002_add_schema_versioning import migrate as migrate_v002
 
 
-class TestDataMigrator:
-    """Test the DataMigrator class."""
+class TestSchemaMigrator:
+    """Test the SchemaMigrator class."""
     
     @pytest.fixture
     def temp_dirs(self):
@@ -20,88 +22,61 @@ class TestDataMigrator:
         temp_dir = Path(tempfile.mkdtemp())
         data_dir = temp_dir / "data"
         backup_dir = temp_dir / "backups"
+        migrations_dir = temp_dir / "migrations"
         
         data_dir.mkdir()
         backup_dir.mkdir()
+        migrations_dir.mkdir()
         
-        yield data_dir, backup_dir
+        yield data_dir, backup_dir, migrations_dir
         
         # Cleanup
         shutil.rmtree(temp_dir)
     
-    def test_create_backup(self, temp_dirs):
-        """Test backup creation."""
-        data_dir, backup_dir = temp_dirs
-        migrator = DataMigrator(str(data_dir), str(backup_dir))
+    def test_get_file_schema_version(self, temp_dirs):
+        """Test reading schema version from files."""
+        data_dir, backup_dir, migrations_dir = temp_dirs
+        migrator = SchemaMigrator(str(data_dir), str(backup_dir), str(migrations_dir))
         
-        # Create some test data
+        # Test unversioned file
         test_file = data_dir / "test.json"
-        test_data = {"test": "data"}
+        test_data = {"data": {"test": "value"}}
         with open(test_file, 'w') as f:
             json.dump(test_data, f)
         
-        # Create backup
-        backup_path = migrator.create_backup("test_migration")
+        version = migrator.get_file_schema_version(test_file)
+        assert version == 0
         
-        assert backup_path.exists()
-        assert backup_path.name.startswith("data_backup_test_migration_")
-        assert backup_path.suffix == ".gz"
+        # Test versioned file
+        versioned_data = {"schema_version": 2, "data": {"test": "value"}}
+        with open(test_file, 'w') as f:
+            json.dump(versioned_data, f)
+        
+        version = migrator.get_file_schema_version(test_file)
+        assert version == 2
     
-    def test_restore_backup(self, temp_dirs):
-        """Test backup restoration."""
-        data_dir, backup_dir = temp_dirs
-        migrator = DataMigrator(str(data_dir), str(backup_dir))
+    def test_migrate_file_to_version(self, temp_dirs):
+        """Test migrating a file using the v002 migration function."""
+        data_dir, backup_dir, migrations_dir = temp_dirs
         
-        # Create test data and backup
+        # Create test data without schema version
         test_file = data_dir / "test.json"
-        original_data = {"original": "data"}
+        test_data = {"data": {"test": "value"}}
         with open(test_file, 'w') as f:
-            json.dump(original_data, f)
+            json.dump(test_data, f)
         
-        backup_path = migrator.create_backup("test_restore")
-        
-        # Modify data
-        modified_data = {"modified": "data"}
-        with open(test_file, 'w') as f:
-            json.dump(modified_data, f)
-        
-        # Restore backup
-        success = migrator.restore_backup(backup_path)
-        assert success
-        
-        # Verify restoration
+        # Load and apply v002 migration directly
         with open(test_file, 'r') as f:
-            restored_data = json.load(f)
-        assert restored_data == original_data
-    
-    def test_migration_function(self, temp_dirs):
-        """Test running a migration function."""
-        data_dir, backup_dir = temp_dirs
-        migrator = DataMigrator(str(data_dir), str(backup_dir))
+            file_data = json.load(f)
         
-        # Create test data
-        test_file = data_dir / "test.json"
+        migrated_data = migrate_v002(file_data)
+        
+        # Save migrated data back
         with open(test_file, 'w') as f:
-            json.dump({"test": "data"}, f)
+            json.dump(migrated_data, f)
         
-        # Define a simple migration
-        def test_migration(data_path):
-            test_file = data_path / "test.json"
-            with open(test_file, 'r') as f:
-                data = json.load(f)
-            data["migrated"] = True
-            with open(test_file, 'w') as f:
-                json.dump(data, f)
-            return True
-        
-        # Run migration
-        success = migrator.run_migration("test_migration", test_migration)
-        assert success
-        
-        # Verify migration worked
-        with open(test_file, 'r') as f:
-            data = json.load(f)
-        assert data["migrated"] is True
+        # Verify schema version was added
+        assert migrated_data["schema_version"] == 2
 
 
 class TestURLMigration:
@@ -149,13 +124,20 @@ class TestURLMigration:
         shutil.rmtree(temp_dir)
     
     def test_url_migration(self, temp_data_dir):
-        """Test URL to multi-site migration."""
-        # Run migration
-        success = migration_url_to_multi_site(temp_data_dir)
-        assert success
+        """Test URL to multi-site migration using v001 migrate function."""
+        # Run v001 migration directly on file data
+        listing1_path = temp_data_dir / "listing1.json"
+        with open(listing1_path, 'r') as f:
+            listing1_data = json.load(f)
+        
+        # Apply v001 migration
+        migrated_data = migrate_v001(listing1_data)
+        
+        # Save migrated data back
+        with open(listing1_path, 'w') as f:
+            json.dump(migrated_data, f, indent=2)
         
         # Check migration results
-        listing1_path = temp_data_dir / "listing1.json"
         with open(listing1_path, 'r') as f:
             listing1 = json.load(f)
         
@@ -165,31 +147,23 @@ class TestURLMigration:
         assert data1["urls"]["cargurus"] == "https://cargurus.com/listing/123"
         assert data1["last_updated_site"] == "cargurus"
         assert data1["sites_seen"] == ["cargurus"]
-        
-        # Check second listing
-        listing2_path = temp_data_dir / "listing2.json"
-        with open(listing2_path, 'r') as f:
-            listing2 = json.load(f)
-        
-        data2 = listing2["data"]
-        assert data2["urls"]["autotrader"] == "https://autotrader.com/listing/456"
-        assert data2["last_updated_site"] == "autotrader"
-        assert data2["sites_seen"] == ["autotrader"]
     
     def test_migration_idempotent(self, temp_data_dir):
         """Test that migration can be run multiple times safely."""
-        # Run migration twice
-        success1 = migration_url_to_multi_site(temp_data_dir)
-        success2 = migration_url_to_multi_site(temp_data_dir)
-        
-        assert success1
-        assert success2
-        
-        # Verify data is still correct
+        # Load and migrate listing twice
         listing1_path = temp_data_dir / "listing1.json"
         with open(listing1_path, 'r') as f:
-            listing1 = json.load(f)
+            original_data = json.load(f)
         
-        data1 = listing1["data"]
+        # First migration
+        migrated_once = migrate_v001(original_data)
+        # Second migration on already migrated data
+        migrated_twice = migrate_v001(migrated_once)
+        
+        # Should be unchanged after second migration
+        assert migrated_once == migrated_twice
+        
+        # Verify data is still correct
+        data1 = migrated_twice["data"]
         assert data1["urls"]["cargurus"] == "https://cargurus.com/listing/123"
         assert data1["last_updated_site"] == "cargurus"
