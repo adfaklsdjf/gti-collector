@@ -259,12 +259,12 @@
                 <span class="detail-value">{{ listing.id[:8] }}...</span>
             </div>
         </div>
-        
+
         <div class="vin-section">
             <div class="vin-label">Vehicle Identification Number</div>
             <div class="vin-value">{{ listing.data.vin }}</div>
         </div>
-        
+
         <div class="action-buttons">
             <a href="{{ listing.data.url }}" target="_blank" class="btn btn-primary">
                 View Original Listing →
@@ -276,7 +276,7 @@
                 Delete Listing
             </button>
         </div>
-        
+
         <div class="metadata">
             <strong>Internal ID:</strong> {{ listing.id }}<br>
             <strong>Data stored:</strong> {{ listing.data.keys() | list | length }} fields
@@ -286,9 +286,9 @@
     <div class="content-section">
         <div class="comments-section">
             <h3>💬 Comments</h3>
-            <textarea 
-                id="commentsTextarea" 
-                class="comments-textarea" 
+            <textarea
+                id="commentsTextarea"
+                class="comments-textarea"
                 placeholder="Add your notes, thoughts, or observations about this listing..."
             >{{ listing.comments or '' }}</textarea>
             <div class="comments-actions">
@@ -311,11 +311,11 @@ function saveComments() {
     const textarea = document.getElementById('commentsTextarea');
     const saveButton = document.getElementById('saveButton');
     const comments = textarea.value;
-    
+
     // Show loading state
     saveButton.disabled = true;
     saveButton.textContent = 'Saving...';
-    
+
     fetch(`/listing/{{ listing.id }}/comments`, {
         method: 'PUT',
         headers: {
@@ -329,7 +329,7 @@ function saveComments() {
             // Show success feedback
             saveButton.textContent = 'Saved!';
             saveButton.style.background = '#059669';
-            
+
             // Reset button after 2 seconds
             setTimeout(() => {
                 saveButton.disabled = false;
@@ -360,14 +360,14 @@ function clearComments() {
 }
 
 function deleteListing(listingId, vin) {
-    if (!confirm(`Are you sure you want to delete this listing for VIN ${vin}?\n\nThis will move the listing to the deleted folder but preserve the data.`)) {
-        return;
-    }
-    
+    // if (!confirm(`Are you sure you want to delete this listing for VIN ${vin}?\n\nThis will move the listing to the deleted folder but preserve the data.`)) {
+    //     return;
+    // }
+
     const button = document.getElementById('deleteButton');
     button.disabled = true;
     button.textContent = 'Deleting...';
-    
+
     fetch(`/listings/${listingId}`, {
         method: 'DELETE',
         headers: {

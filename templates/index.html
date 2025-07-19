@@ -208,7 +208,7 @@
         {% if listing.data.location %}
         <div class="listing-location">📍 {{ listing.data.location }}</div>
         {% endif %}
-        
+
         <div class="listing-details">
             <div class="detail-item">
                 <span class="detail-label">Year</span>
@@ -227,9 +227,9 @@
                 <span class="detail-value">{{ listing.id[:8] }}...</span>
             </div>
         </div>
-        
+
         <div class="vin">VIN: {{ listing.data.vin }}</div>
-        
+
         <div class="listing-url">
             <a href="{{ listing.data.url }}" target="_blank">View Original Listing →</a>
             <a href="/listing/{{ listing.id }}" style="display: inline-block; margin-left: 15px; color: #059669; text-decoration: none; font-weight: 500;">View Details →</a>
@@ -247,14 +247,14 @@
 
 <script>
 function deleteListing(listingId, vin, button) {
-    if (!confirm(`Are you sure you want to delete the listing for VIN ${vin}?\n\nThis will move the listing to the deleted folder but preserve the data.`)) {
-        return;
-    }
-    
+    // if (!confirm(`Are you sure you want to delete the listing for VIN ${vin}?\n\nThis will move the listing to the deleted folder but preserve the data.`)) {
+    //     return;
+    // }
+
     // Disable button and show loading state
     button.disabled = true;
     button.textContent = 'Deleting...';
-    
+
     fetch(`/listings/${listingId}`, {
         method: 'DELETE',
         headers: {
@@ -264,10 +264,10 @@ function deleteListing(listingId, vin, button) {
     .then(response => response.json())
     .then(data => {
         if (data.message) {
-            alert(`Success: ${data.message}`);
+            console.log(`Success: ${data.message}`);
             // Remove the listing card from the page
             button.closest('.listing-card').remove();
-            
+
             // Update the count in the header
             const statsElement = document.querySelector('.stats');
             if (statsElement) {
@@ -275,7 +275,7 @@ function deleteListing(listingId, vin, button) {
                 const currentCount = parseInt(currentText.match(/\d+/)[0]);
                 const newCount = currentCount - 1;
                 statsElement.textContent = `${newCount} listings collected • Sorted by price`;
-                
+
                 // Show "No listings yet" message if this was the last listing
                 if (newCount === 0) {
                     document.querySelector('.listings-grid').innerHTML = `
@@ -294,7 +294,7 @@ function deleteListing(listingId, vin, button) {
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error deleting listing. Please try again.');
+        alert('Error deleting listing: ' + error.message);
         button.disabled = false;
         button.textContent = 'Delete';
     });
