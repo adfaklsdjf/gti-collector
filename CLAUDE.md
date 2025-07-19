@@ -13,10 +13,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Current Architecture
 
 ### Backend Components
-- **Flask app** (`app.py`) - Main application with modular routes
+- **Flask app** (`app.py`) - Main application with modular routes and pre-flight migration checks
+- **Schema migration system** (`schema_migrations.py`) - Drupal-style versioned migrations with per-file tracking
 - **Multi-site support** (`site_mappings.py`) - Site detection and field mapping
-- **Data migration system** (`migrations.py`) - Safe schema evolution with backups
-- **Store class** (`store.py`) - VIN-based deduplication and file storage
+- **Store class** (`store.py`) - VIN-based deduplication with just-in-time migration support
 - **Desirability scoring** (`desirability.py`) - Multi-criteria ranking algorithm
 
 ### Frontend & Extension
@@ -25,9 +25,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Template system** - Jinja2 inheritance for maintainable UI
 
 ### Data Architecture
+- **Schema versioning** - Per-file version tracking with sequential migration support
 - **Multi-site URLs** - Each listing tracks URLs from multiple car sites
 - **VIN deduplication** - Merge data across sites using VIN as primary key
-- **Individual JSON files** - One file per listing with VIN index for fast lookups
+- **Individual JSON files** - One file per listing with schema-versioned VIN index
 
 ## Core Features
 
@@ -42,10 +43,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Real-time calculation** - Scores update with current data context
 - **Visual rankings** - Star ratings on listing cards with dual sort options
 
-### Data Safety & Migration
-- **Migration framework** - Safe schema evolution with automatic backups
-- **Comprehensive logging** - Full audit trail of changes and migrations
-- **Data validation** - Required vs optional field distinction
+### Schema Migration System
+- **Drupal-style versioning** - Sequential migrations with per-file version tracking
+- **Pre-flight checks** - App startup migration for bulk operations (index-first optimization)
+- **Just-in-time migration** - Runtime file-level migration with warnings
+- **Automatic backups** - Timestamped tarballs before bulk migrations
+- **Implicit versioning** - Current schema = highest available migration number
+- **Historical preservation** - All migration code preserved in migrations/ directory
 
 ### Next Priorities
 - **Multi-site extraction** - Add AutoTrader and Cars.com selectors to extension
@@ -56,14 +60,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Essential Commands (ALWAYS activate venv first)
 ```bash
-# Start Flask app (auto-reloads on changes)
+# Start Flask app (auto-reloads on changes with pre-flight migration check)
 source venv/bin/activate && python app.py
 
 # Run all tests
 source venv/bin/activate && python -m pytest -v
 
-# Run migrations  
-source venv/bin/activate && python migrations.py migrate-urls
+# Schema migration commands
+source venv/bin/activate && python schema_migrations.py check
+source venv/bin/activate && python schema_migrations.py preflight
+source venv/bin/activate && python schema_migrations.py list-migrations
 ```
 
 ### Development Workflow
@@ -91,11 +97,12 @@ source venv/bin/activate && python migrations.py migrate-urls
 - **Defensive programming** - Handle missing directories, network failures, etc.
 - **Field management** - Preserve optional fields, detect meaningful changes only
 
-## Current Data Schema
+## Current Data Schema (v2)
 
-### Multi-Site Listing Structure
+### Listing File Structure
 ```json
 {
+  "schema_version": 2,
   "id": "uuid",
   "data": {
     "urls": {"cargurus": "url", "autotrader": "url"},
@@ -106,6 +113,17 @@ source venv/bin/activate && python migrations.py migrate-urls
     "trim_level": "string", "accidents": "string", "previous_owners": "string"
   },
   "comments": "user-editable text"
+}
+```
+
+### Index File Structure  
+```json
+{
+  "schema_version": 2,
+  "vin_mappings": {
+    "VIN123": "listing-id-456",
+    "VIN789": "listing-id-012"
+  }
 }
 ```
 
@@ -123,13 +141,15 @@ source venv/bin/activate && python migrations.py migrate-urls
 ```
 gti-listings/
 ├── app.py, config.py, store.py          # Core Flask app and storage
-├── migrations.py                        # Data migration framework  
+├── schema_migrations.py                 # Schema versioning migration system
+├── migrations/                          # Versioned migration files (v001, v002, etc.)
 ├── desirability.py, site_mappings.py    # Scoring and multi-site support
 ├── routes/                              # Route handlers
 ├── templates/                           # Jinja2 templates
 ├── gti-extension/                       # Browser extension
 ├── test_*.py                            # Comprehensive test suite
 ├── data/                                # JSON listings (gitignored)
+├── backups/                             # Migration backups (gitignored)
 └── CLAUDE.md                            # This documentation
 ```
 
