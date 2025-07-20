@@ -52,10 +52,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Implicit versioning** - Current schema = highest available migration number
 - **Historical preservation** - All migration code preserved in migrations/ directory
 
+### User-Editable Fields
+- **Performance Package** - Boolean field (Yes/No/Not Set) for tracking GTI performance packages
+- **Comments system** - Free-form text notes preserved during listing updates
+- **Editable fields API** - `/listing/<id>/fields` PUT endpoint for updating user-editable data
+- **Frontend integration** - Dropdown selectors and forms in listing detail pages
+
 ### Next Priorities
 - **Multi-site extraction** - Add AutoTrader and Cars.com selectors to extension
 - **Qualitative scoring factors** - Accident penalties, title bonuses, owner count penalties
 - **User preferences** - Configurable weights and trim level preferences
+- **Additional editable fields** - Expand user-customizable data beyond performance package
 
 ## Development Workflow
 
@@ -87,7 +94,7 @@ source venv/bin/activate && python schema_migrations.py list-migrations
 
 ## Testing Strategy
 
-**Goal**: Comprehensive test coverage to minimize debug loops. Currently 83+ tests covering unit, integration, and migration scenarios.
+**Goal**: Comprehensive test coverage to minimize debug loops. Currently 90+ tests covering unit, integration, migration, and user-editable field scenarios.
 
 **Key principle**: Add tests when adding features to maintain safety net.
 
@@ -105,12 +112,12 @@ source venv/bin/activate && python schema_migrations.py list-migrations
 - **Defensive programming** - Handle missing directories, network failures, etc.
 - **Field management** - Preserve optional fields, detect meaningful changes only
 
-## Current Data Schema (v3)
+## Current Data Schema (v4)
 
 ### Listing File Structure
 ```json
 {
-  "schema_version": 3,
+  "schema_version": 4,
   "id": "uuid",
   "data": {
     "urls": {"cargurus": "url", "autotrader": "url"},
@@ -118,7 +125,8 @@ source venv/bin/activate && python schema_migrations.py list-migrations
     "sites_seen": ["cargurus", "autotrader"],
     "price": "string", "year": "string", "mileage": "string", "vin": "string",
     "distance": "numeric string", "title": "string", "location": "string",
-    "trim_level": "string", "accidents": "string", "previous_owners": "string"
+    "trim_level": "string", "accidents": "string", "previous_owners": "string",
+    "performance_package": "boolean or null"
   },
   "comments": "user-editable text",
   "created_date": "ISO timestamp",
@@ -131,7 +139,7 @@ source venv/bin/activate && python schema_migrations.py list-migrations
 ### Index File Structure  
 ```json
 {
-  "schema_version": 3,
+  "schema_version": 4,
   "vin_mappings": {
     "VIN123": "listing-id-456",
     "VIN789": "listing-id-012"
@@ -139,12 +147,18 @@ source venv/bin/activate && python schema_migrations.py list-migrations
 }
 ```
 
-### Date Tracking Logic (v3)
+### Date Tracking Logic (v4)
 - **created_date**: Set when listing is first added, never changes
-- **last_modified_date**: Updated only when listing data (excluding last_seen_date) changes
+- **last_modified_date**: Updated when listing data OR editable fields change (excluding last_seen_date)
 - **last_seen_date**: Always updated when extension submits data, regardless of other changes  
 - **deleted_date**: Set when listing is moved to deleted directory, null for active listings
 - **Key principle**: Updating last_seen_date alone does NOT count as a modification
+
+### User-Editable Fields (v4)
+- **performance_package**: Boolean field (true/false/null) for tracking GTI performance packages
+- **Editable field updates**: Trigger last_modified_date change and preserve during listing merges
+- **API pattern**: PUT `/listing/<id>/fields` with field validation in store.py
+- **Frontend pattern**: Dropdown selectors with "Not Set/Yes/No" options
 
 ## Technical Notes
 
@@ -152,8 +166,20 @@ source venv/bin/activate && python schema_migrations.py list-migrations
 - **Selectors**: `data-cg-ft="vdp-listing-title"`, multiple fallbacks for brittle class names
 - **Distance extraction**: From location text like "Cleveland, OH (15 mi away)"
 
+### Edmunds Extraction Patterns
+- **Dealer info**: `data-test="dealer-info"` container with `h3.dealer-name` and `div.dealer-address`
+- **JSON-LD structured data**: Comprehensive vehicle details from script tags
+- **Title extraction**: From page title with year matching patterns
+
 ### Extension Requirements  
 - **Manifest v3** with localhost permissions for CORS requests
+
+### Migration Development Patterns
+- **Required functions**: Both `migrate()` and `migrate_listing()` functions required
+- **Data type handling**: `migrate()` detects listing vs index data and delegates appropriately
+- **Field addition**: Initialize new fields with sensible defaults (null for optional fields)
+- **Idempotency**: All migrations must be safely re-runnable without data corruption
+- **Testing requirements**: Add migration tests to `test_migrations.py` for new schema versions
 
 ## File Structure
 
@@ -162,7 +188,7 @@ gti-listings/
 ├── app.py, config.py, store.py          # Core Flask app and storage
 ├── pidlock.py                           # Single-instance PID lock management
 ├── schema_migrations.py                 # Schema versioning migration system
-├── migrations/                          # Versioned migration files (v001, v002, etc.)
+├── migrations/                          # Versioned migration files (v001, v002, v003, v004)
 ├── desirability.py, site_mappings.py    # Scoring and multi-site support
 ├── routes/                              # Route handlers
 ├── templates/                           # Jinja2 templates
