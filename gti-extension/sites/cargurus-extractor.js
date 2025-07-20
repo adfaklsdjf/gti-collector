@@ -8,7 +8,7 @@
  */
 function extractCarGurusListing() {
   console.log('🚗 Starting CarGurus extraction...');
-  
+
   const carDetails = {
     site: 'cargurus',
     url: window.location.href
@@ -103,8 +103,8 @@ function extractCarGurusListing() {
   // Extract additional vehicle details using H5 + next element pattern
   const vehicleFields = [
     'Drivetrain',
-    'Exterior Color',
-    'Interior Color',
+    'Exterior color',
+    'Interior color',
     'MPG',
     'Engine',
     'Fuel type',

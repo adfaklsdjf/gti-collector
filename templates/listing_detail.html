@@ -272,6 +272,18 @@
                 <span class="detail-value">{{ listing.data.previous_owners }}</span>
             </div>
             {% endif %}
+            {% if listing.data.exterior_color %}
+            <div class="detail-item">
+                <span class="detail-label">Exterior Color</span>
+                <span class="detail-value">{{ listing.data.exterior_color }}</span>
+            </div>
+            {% endif %}
+            {% if listing.data.interior_color %}
+            <div class="detail-item">
+                <span class="detail-label">Interior Color</span>
+                <span class="detail-value">{{ listing.data.interior_color }}</span>
+            </div>
+            {% endif %}
             <div class="detail-item">
                 <span class="detail-label">Listing ID</span>
                 <span class="detail-value">{{ listing.id[:8] }}...</span>
