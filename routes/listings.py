@@ -162,6 +162,22 @@ def create_listings_routes(app, store):
                 # Sort by desirability score (highest first)
                 listings.sort(key=lambda x: x.get('desirability_score', 0), reverse=True)
                 sort_description = "Sorted by desirability"
+            elif sort_by == 'last_seen_asc':
+                # Sort by last seen date (oldest first - least recently seen)
+                def extract_last_seen(listing):
+                    try:
+                        last_seen = listing.get('last_seen_date')
+                        if last_seen:
+                            # Return the ISO timestamp string for sorting
+                            return last_seen
+                        else:
+                            # If no last_seen_date, put at end (use a very old date)
+                            return '1970-01-01T00:00:00'
+                    except:
+                        return '1970-01-01T00:00:00'
+                
+                listings.sort(key=extract_last_seen)
+                sort_description = "Sorted by last seen (least recently seen first)"
             else:
                 # Default: sort by price (lowest first)
                 def extract_price(listing):
