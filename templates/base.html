@@ -17,10 +17,93 @@
             margin: 0 auto;
             padding: 20px;
         }
+        
+        /* Toast notification styles */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .toast {
+            background: #333;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transform: translateX(400px);
+            transition: transform 0.3s ease-in-out;
+            max-width: 300px;
+            word-wrap: break-word;
+        }
+        
+        .toast.show {
+            transform: translateX(0);
+        }
+        
+        .toast.success {
+            background: #28a745;
+        }
+        
+        .toast.error {
+            background: #dc3545;
+        }
+        
+        .toast.warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .toast.info {
+            background: #17a2b8;
+        }
+        
         {% block styles %}{% endblock %}
     </style>
 </head>
 <body>
+    <!-- Toast container -->
+    <div class="toast-container" id="toast-container"></div>
+    
     {% block content %}{% endblock %}
+    
+    <script>
+        /**
+         * Show a toast notification
+         * @param {string} message - The message to display
+         * @param {string} type - The type of toast (success, error, warning, info)
+         * @param {number} duration - How long to show the toast in milliseconds (default: 3000)
+         */
+        function showToast(message, type = 'info', duration = 3000) {
+            const container = document.getElementById('toast-container');
+            
+            // Create toast element
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            
+            // Add to container
+            container.appendChild(toast);
+            
+            // Trigger show animation
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 100);
+            
+            // Remove after duration
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    if (container.contains(toast)) {
+                        container.removeChild(toast);
+                    }
+                }, 300);
+            }, duration);
+        }
+        
+        {% block scripts %}{% endblock %}
+    </script>
 </body>
 </html>
