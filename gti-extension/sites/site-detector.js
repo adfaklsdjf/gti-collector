@@ -9,6 +9,12 @@ const SUPPORTED_SITES = {
     listingUrlPattern: /cargurus\.com.*viewDetailsFilterViewInventoryListing/i,
     extractor: 'cargurus'
   },
+  edmunds: {
+    name: 'Edmunds',
+    urlPattern: /edmunds\.com/i,
+    listingUrlPattern: /edmunds\.com.*\/inventory\//i,
+    extractor: 'edmunds'
+  },
   autotrader: {
     name: 'AutoTrader',
     urlPattern: /autotrader\.com/i,

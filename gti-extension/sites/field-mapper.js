@@ -28,6 +28,24 @@ const SITE_FIELD_MAPPINGS = {
     'previous_owners': 'previous_owners',
     'phone_number': 'phone_number'
   },
+  edmunds: {
+    // Edmunds-specific field mappings
+    'site': 'site',
+    'url': 'url',
+    'Title': 'title',
+    'Price': 'price',
+    'Year': 'year', 
+    'Mileage': 'mileage',
+    'VIN': 'vin',
+    'Trim': 'trim_level',
+    'Ext. Color': 'exterior_color',
+    'Int. Color': 'interior_color',
+    'Accidents': 'accidents',
+    'Owners': 'previous_owners',
+    'Stock #': 'stock_number',
+    'Seller Name': 'seller_name',
+    'Seller Location': 'location'
+  },
   autotrader: {
     // TODO: Define AutoTrader field mappings
     'site': 'site',
@@ -50,6 +68,11 @@ const SITE_CAPABILITIES = {
     'site', 'url', 'title', 'price', 'year', 'mileage', 'vin', 'location', 'distance',
     'drivetrain', 'exterior_color', 'interior_color', 'mpg', 'engine', 'fuel_type',
     'transmission', 'trim_level', 'car_title', 'accidents', 'previous_owners', 'phone_number'
+  ],
+  edmunds: [
+    'site', 'url', 'title', 'price', 'year', 'mileage', 'vin', 'location',
+    'exterior_color', 'interior_color', 'trim_level', 'accidents', 'previous_owners',
+    'stock_number', 'seller_name'
   ],
   autotrader: [
     'site', 'url', 'title'

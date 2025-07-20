@@ -319,6 +319,9 @@ function handleExtensionClick() {
     case 'cargurus':
       rawCarDetails = extractCarGurusListing();
       break;
+    case 'edmunds':
+      rawCarDetails = extractEdmundsListing();
+      break;
     case 'autotrader':
       rawCarDetails = extractAutoTraderListing();
       break;

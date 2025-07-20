@@ -19,6 +19,11 @@ SITE_CAPABILITIES = {
         'drivetrain', 'exterior_color', 'interior_color', 'mpg', 'engine', 'fuel_type',
         'transmission', 'trim_level', 'car_title', 'accidents', 'previous_owners', 'phone_number'
     ],
+    'edmunds': [
+        'site', 'url', 'title', 'price', 'year', 'mileage', 'vin', 'location',
+        'exterior_color', 'interior_color', 'trim_level', 'accidents', 'previous_owners',
+        'stock_number', 'seller_name'
+    ],
     'autotrader': [
         'site', 'url', 'title'
         # TODO: Add more capabilities as AutoTrader extraction is implemented
@@ -60,6 +65,24 @@ SITE_FIELD_MAPPINGS = {
         'site': 'site',
         'url': 'url',
         'title': 'title'
+    },
+    'edmunds': {
+        # Edmunds-specific field mappings
+        'site': 'site',
+        'url': 'url',
+        'Title': 'title',
+        'Price': 'price',
+        'Year': 'year', 
+        'Mileage': 'mileage',
+        'VIN': 'vin',
+        'Trim': 'trim_level',
+        'Ext. Color': 'exterior_color',
+        'Int. Color': 'interior_color',
+        'Accidents': 'accidents',
+        'Owners': 'previous_owners',
+        'Stock #': 'stock_number',
+        'Seller Name': 'seller_name',
+        'Seller Location': 'location'
     },
     'cars': {
         # TODO: Define Cars.com mappings
@@ -113,8 +136,10 @@ def process_site_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
             logger.info(f"⚠️ Unknown field dropped: {site_field} = '{value}'")
             continue
         
-        processed_data[internal_field] = value
-        logger.debug(f"✅ Mapped: {site_field} = '{value}' -> {internal_field}")
+        # Apply site-specific processing
+        processed_value = _apply_site_specific_processing(site_key, internal_field, value)
+        processed_data[internal_field] = processed_value
+        logger.debug(f"✅ Mapped: {site_field} = '{value}' -> {internal_field} = '{processed_value}'")
     
     # Handle URL specially - convert to site-specific URLs structure
     if 'url' in processed_data and site_key:
@@ -125,6 +150,41 @@ def process_site_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
     
     logger.info(f"✅ Site data processing complete for {site_key}")
     return processed_data
+
+
+def _apply_site_specific_processing(site_key: str, internal_field: str, value: str) -> str:
+    """
+    Apply site-specific processing to field values.
+    
+    Args:
+        site_key: Site identifier
+        internal_field: Internal field name
+        value: Raw field value
+        
+    Returns:
+        str: Processed field value
+    """
+    if site_key == 'edmunds':
+        # Edmunds-specific processing
+        if internal_field == 'price':
+            # Edmunds price comes as numeric string, need to add $ prefix
+            if not value.startswith('$'):
+                return f"${value}"
+        elif internal_field == 'accidents':
+            # Normalize accident reporting format
+            if value.lower() == "no reported accidents":
+                return "0 accidents reported"
+        elif internal_field == 'mileage':
+            # Ensure mileage has proper formatting
+            if ',' not in value and len(value) > 3:
+                # Add commas to large numbers for consistency
+                try:
+                    num = int(value.replace(',', ''))
+                    return f"{num:,}"
+                except ValueError:
+                    pass
+    
+    return value
 
 
 def merge_site_data(existing_data: Dict[str, Any], new_data: Dict[str, Any]) -> Dict[str, Any]:

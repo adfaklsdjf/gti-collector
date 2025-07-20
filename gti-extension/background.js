@@ -5,6 +5,7 @@ chrome.action.onClicked.addListener((tab) => {
       "sites/site-detector.js",
       "sites/field-mapper.js", 
       "sites/cargurus-extractor.js",
+      "sites/edmunds-extractor.js",
       "sites/autotrader-extractor.js",
       "sites/cars-extractor.js",
       "content.js"
