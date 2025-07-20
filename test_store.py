@@ -24,9 +24,11 @@ def temp_store():
 
 @pytest.fixture
 def sample_listing():
-    """Sample GTI listing data for testing."""
+    """Sample GTI listing data for testing (in internal processed format)."""
     return {
-        'url': 'https://test.com/listing/123',
+        'urls': {'cargurus': 'https://test.com/listing/123'},
+        'last_updated_site': 'cargurus',
+        'sites_seen': ['cargurus'],
         'price': '$25,000',
         'year': '2019',
         'mileage': '45000',
@@ -64,7 +66,7 @@ class TestStore:
         
         # Try to add same VIN again with different data
         updated_listing = sample_listing.copy()
-        updated_listing['url'] = 'https://different.com/listing/456'
+        updated_listing['urls'] = {'cargurus': 'https://different.com/listing/456'}
         updated_listing['price'] = '$26,000'
         updated_listing['title'] = 'Updated Title'
         
@@ -73,8 +75,8 @@ class TestStore:
         assert result2['updated'] is True   # But was updated
         assert result2['id'] == result1['id']  # Same ID returned
         assert 'price' in result2['changes']
-        assert 'url' in result2['changes']
         assert 'title' in result2['changes']
+        # URLs get merged in multi-site system, not tracked as changes when same site
         
         # Verify only one listing exists but with updated data
         assert temp_store.get_listing_count() == 1

@@ -46,6 +46,7 @@ def client():
 def sample_listing_payload():
     """Sample POST payload for testing."""
     return {
+        'site': 'cargurus',
         'url': 'https://test.com/listing/123',
         'price': '$25,000',
         'year': '2019',
@@ -86,7 +87,7 @@ class TestListingsPostEndpoint:
         assert len(data['id']) == 36  # UUID length
     
     def test_add_duplicate_listing_no_changes(self, client, sample_listing_payload):
-        """Test adding duplicate VIN with no changes."""
+        """Test adding duplicate VIN with no content changes (only multi-site tracking update)."""
         # Add first listing
         response1 = client.post('/listings',
                                data=json.dumps(sample_listing_payload),
@@ -94,16 +95,16 @@ class TestListingsPostEndpoint:
         assert response1.status_code == 201
         first_id = json.loads(response1.data)['id']
         
-        # Add duplicate with no changes
+        # Add duplicate with no changes - should update sites_seen tracking
         response2 = client.post('/listings',
                                data=json.dumps(sample_listing_payload),
                                content_type='application/json')
         assert response2.status_code == 200
         
         data = json.loads(response2.data)
-        assert data['message'] == 'No changes detected'
+        assert 'sites_seen' in data['message']  # Multi-site tracking was updated
         assert data['id'] == first_id
-        assert data['updated'] is False
+        assert data['updated'] is True  # Updated for multi-site tracking
     
     def test_add_duplicate_listing_with_updates(self, client, sample_listing_payload):
         """Test adding duplicate VIN with changes triggers update."""
@@ -178,6 +179,7 @@ class TestListingsPostEndpoint:
     def test_optional_fields_accepted(self, client):
         """Test that optional fields (title, location, distance) are stored."""
         payload = {
+            'site': 'cargurus',
             'url': 'https://test.com/listing/123',
             'price': '$25,000',
             'year': '2019',
@@ -196,6 +198,7 @@ class TestListingsPostEndpoint:
     def test_missing_distance_accepted(self, client):
         """Test that missing distance field is accepted since it's optional."""
         payload = {
+            'site': 'cargurus',
             'url': 'https://test.com/listing/123',
             'price': '$25,000',
             'year': '2019',
@@ -213,6 +216,7 @@ class TestListingsPostEndpoint:
     def test_distance_extracted_from_location(self, client):
         """Test that distance is extracted from location when not provided separately."""
         payload = {
+            'site': 'cargurus',
             'url': 'https://test.com/listing/123',
             'price': '$25,000',
             'year': '2019',
@@ -240,6 +244,7 @@ class TestListingsPostEndpoint:
     def test_distance_not_extracted_when_provided(self, client):
         """Test that provided distance is not overridden by location extraction."""
         payload = {
+            'site': 'cargurus',
             'url': 'https://test.com/listing/123',
             'price': '$25,000',
             'year': '2019',
