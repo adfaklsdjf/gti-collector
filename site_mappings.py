@@ -72,7 +72,7 @@ SITE_FIELD_MAPPINGS = {
         'url': 'url',
         'Title': 'title',
         'Price': 'price',
-        'Year': 'year', 
+        'Year': 'year',
         'Mileage': 'mileage',
         'VIN': 'vin',
         'Trim': 'trim_level',
@@ -80,7 +80,7 @@ SITE_FIELD_MAPPINGS = {
         'Int. Color': 'interior_color',
         'Accidents': 'accidents',
         'Owners': 'previous_owners',
-        'Stock #': 'stock_number',
+        'Stock Number': 'stock_number',
         'Seller Name': 'seller_name',
         'Seller Location': 'location'
     },
@@ -96,10 +96,10 @@ SITE_FIELD_MAPPINGS = {
 def process_site_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Process raw site data into internal format.
-    
+
     Args:
         raw_data: Raw data from site extractor
-        
+
     Returns:
         dict: Processed data in internal format with site URLs properly handled
     """
@@ -107,22 +107,22 @@ def process_site_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
     if not site_key:
         logger.error("No site specified in raw data")
         return {}
-    
+
     logger.info(f"📥 Processing data from site: {site_key}")
-    
+
     # Get site mapping
     mapping = SITE_FIELD_MAPPINGS.get(site_key, {})
     capabilities = SITE_CAPABILITIES.get(site_key, [])
-    
+
     processed_data = {}
-    
+
     # Process each field from raw data
     for site_field, value in raw_data.items():
         if value is None or value == '':
             continue  # Skip empty values
-        
+
         internal_field = None
-        
+
         # Check for explicit mapping first
         if site_field in mapping:
             internal_field = mapping[site_field]
@@ -135,19 +135,19 @@ def process_site_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
         else:
             logger.info(f"⚠️ Unknown field dropped: {site_field} = '{value}'")
             continue
-        
+
         # Apply site-specific processing
         processed_value = _apply_site_specific_processing(site_key, internal_field, value)
         processed_data[internal_field] = processed_value
         logger.debug(f"✅ Mapped: {site_field} = '{value}' -> {internal_field} = '{processed_value}'")
-    
+
     # Handle URL specially - convert to site-specific URLs structure
     if 'url' in processed_data and site_key:
         site_url = processed_data.pop('url')
         processed_data['urls'] = {site_key: site_url}
         processed_data['last_updated_site'] = site_key
         logger.info(f"🔗 Site URL stored: {site_key} -> {site_url}")
-    
+
     logger.info(f"✅ Site data processing complete for {site_key}")
     return processed_data
 
@@ -155,12 +155,12 @@ def process_site_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
 def _apply_site_specific_processing(site_key: str, internal_field: str, value: str) -> str:
     """
     Apply site-specific processing to field values.
-    
+
     Args:
         site_key: Site identifier
         internal_field: Internal field name
         value: Raw field value
-        
+
     Returns:
         str: Processed field value
     """
@@ -183,18 +183,18 @@ def _apply_site_specific_processing(site_key: str, internal_field: str, value: s
                     return f"{num:,}"
                 except ValueError:
                     pass
-    
+
     return value
 
 
 def merge_site_data(existing_data: Dict[str, Any], new_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Merge new site data with existing listing data.
-    
+
     Args:
         existing_data: Current listing data
         new_data: New data from site (already processed by process_site_data)
-        
+
     Returns:
         dict: Merged data with URLs properly combined
     """
@@ -202,66 +202,66 @@ def merge_site_data(existing_data: Dict[str, Any], new_data: Dict[str, Any]) -> 
     if not site_key:
         logger.error("No site specified in new data")
         return existing_data
-    
+
     logger.info(f"🔄 Merging data from site: {site_key}")
-    
+
     # Start with existing data
     merged_data = existing_data.copy()
-    
+
     # Merge URLs specially
     if 'urls' in new_data:
         if 'urls' not in merged_data:
             merged_data['urls'] = {}
         merged_data['urls'].update(new_data['urls'])
         logger.info(f"🔗 Updated URLs: {merged_data['urls']}")
-    
+
     # Track sites seen
     if 'sites_seen' not in merged_data:
         merged_data['sites_seen'] = []
     if site_key not in merged_data['sites_seen']:
         merged_data['sites_seen'].append(site_key)
         logger.info(f"🌐 Added site to seen list: {site_key}")
-    
+
     # Merge other fields (last-updated-wins approach)
     fields_updated = []
     for field, value in new_data.items():
         if field in ['urls', 'sites_seen']:
             continue  # Already handled
-        
+
         if field not in merged_data or merged_data[field] != value:
             old_value = merged_data.get(field, 'None')
             merged_data[field] = value
             fields_updated.append(f"{field}: '{old_value}' -> '{value}'")
-    
+
     if fields_updated:
         logger.info(f"🔄 Fields updated from {site_key}: {', '.join(fields_updated)}")
     else:
         logger.info(f"ℹ️ No field changes from {site_key}")
-    
+
     return merged_data
 
 
 def check_desirability_completeness(data: Dict[str, Any]) -> tuple[bool, list[str]]:
     """
     Check if listing has all required fields for desirability calculation.
-    
+
     Args:
         data: Listing data
-        
+
     Returns:
         tuple: (is_complete, missing_fields)
     """
     missing_fields = []
-    
+
     for field in DESIRABILITY_REQUIRED_FIELDS:
         if field not in data or not data[field]:
             missing_fields.append(field)
-    
+
     is_complete = len(missing_fields) == 0
-    
+
     if not is_complete:
         logger.warning(f"⚠️ Missing desirability fields: {missing_fields}")
-    
+
     return is_complete, missing_fields
 
 

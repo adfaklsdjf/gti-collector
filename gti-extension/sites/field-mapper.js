@@ -42,7 +42,7 @@ const SITE_FIELD_MAPPINGS = {
     'Int. Color': 'interior_color',
     'Accidents': 'accidents',
     'Owners': 'previous_owners',
-    'Stock #': 'stock_number',
+    'Stock Number': 'stock_number',
     'Seller Name': 'seller_name',
     'Seller Location': 'location'
   },

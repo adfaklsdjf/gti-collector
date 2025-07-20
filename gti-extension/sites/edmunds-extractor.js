@@ -48,6 +48,7 @@ function extractEdmundsListing() {
   for (const span of spans) {
     const text = span.textContent;
     if (text.includes('$') && /\$\d{2,}/.test(text)) {
+      console.log(`Probably price element: "${text}"`);
       // Extract just the numeric value without $ for Edmunds format
       const priceMatch = text.match(/\$(\d[\d,]*)/);
       if (priceMatch) {
@@ -93,7 +94,8 @@ function extractEdmundsListing() {
           data['Int. Color'] = vehicleData.vehicleInteriorColor;
         }
         if (vehicleData.sku) {
-          data['Stock #'] = vehicleData.sku;
+          console.log(`Extracted stock number: "${vehicleData.sku}"`);
+          data['Stock Number'] = vehicleData.sku;
         }
         if (vehicleData.vehicleIdentificationNumber) {
           data.VIN = vehicleData.vehicleIdentificationNumber;
