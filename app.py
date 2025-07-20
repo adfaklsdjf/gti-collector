@@ -4,6 +4,7 @@ GTI Listings Flask App
 Simple Flask app to collect used car listings via POST endpoint.
 """
 
+import os
 from flask import Flask
 from flask_cors import CORS
 from store import Store
@@ -21,15 +22,19 @@ def run_preflight_checks():
     """Run pre-flight checks including PID lock and schema migrations."""
     logger.info("🔍 Running pre-flight checks...")
     
-    # Check PID lock to prevent multiple instances
-    pidlock = PidLock()
-    if not pidlock.acquire():
-        # Another instance is running or PID conflict
-        exit(1)
-    
-    # Register signal handlers for graceful shutdown
-    pidlock.register_cleanup()
-    logger.info("🛡️ PID lock acquired and signal handlers registered")
+    # Skip PID lock in Flask reloader process (debug mode creates parent/child processes)
+    if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
+        logger.info("🔄 Flask reloader detected - skipping PID lock for parent process")
+    else:
+        # Check PID lock to prevent multiple instances
+        pidlock = PidLock()
+        if not pidlock.acquire():
+            # Another instance is running or PID conflict
+            exit(1)
+        
+        # Register signal handlers for graceful shutdown
+        pidlock.register_cleanup()
+        logger.info("🛡️ PID lock acquired and signal handlers registered")
     
     # Check and run schema migrations if needed
     migrator = SchemaMigrator()

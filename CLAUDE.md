@@ -75,6 +75,7 @@ source venv/bin/activate && python schema_migrations.py list-migrations
 
 ### Single Instance & Process Management
 - **PID lock enforcement** - Prevents multiple app instances running simultaneously
+- **Flask debug mode handling** - Detects reloader process and skips PID lock for parent process
 - **Graceful signal handling** - SIGINT (Ctrl+C) and SIGTERM trigger proper shutdown
 - **Process safety checks** - Validates existing processes before startup
 - **Automatic cleanup** - PID files removed on normal or signal-triggered shutdown
