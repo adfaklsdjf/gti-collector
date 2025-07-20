@@ -254,6 +254,24 @@
                 <span class="detail-label">Distance</span>
                 <span class="detail-value">{{ listing.data.distance }}</span>
             </div>
+            {% if listing.data.trim_level %}
+            <div class="detail-item">
+                <span class="detail-label">Trim Level</span>
+                <span class="detail-value">{{ listing.data.trim_level }}</span>
+            </div>
+            {% endif %}
+            {% if listing.data.accidents %}
+            <div class="detail-item">
+                <span class="detail-label">Accidents</span>
+                <span class="detail-value">{{ listing.data.accidents }}</span>
+            </div>
+            {% endif %}
+            {% if listing.data.previous_owners %}
+            <div class="detail-item">
+                <span class="detail-label">Previous Owners</span>
+                <span class="detail-value">{{ listing.data.previous_owners }}</span>
+            </div>
+            {% endif %}
             <div class="detail-item">
                 <span class="detail-label">Listing ID</span>
                 <span class="detail-value">{{ listing.id[:8] }}...</span>
@@ -264,6 +282,52 @@
             <div class="vin-label">Vehicle Identification Number</div>
             <div class="vin-value">{{ listing.data.vin }}</div>
         </div>
+    </div>
+
+    <div class="content-section">
+        <h2 class="section-title">Date Tracking</h2>
+        <div class="details-grid">
+            {% if listing.created_date %}
+            <div class="detail-item">
+                <span class="detail-label">Created</span>
+                <span class="detail-value">{{ listing.created_date[:19]|replace('T', ' ') }}</span>
+            </div>
+            {% endif %}
+            {% if listing.last_modified_date %}
+            <div class="detail-item">
+                <span class="detail-label">Last Modified</span>
+                <span class="detail-value">{{ listing.last_modified_date[:19]|replace('T', ' ') }}</span>
+            </div>
+            {% endif %}
+            {% if listing.last_seen_date %}
+            <div class="detail-item">
+                <span class="detail-label">Last Seen</span>
+                <span class="detail-value">{{ listing.last_seen_date[:19]|replace('T', ' ') }}</span>
+            </div>
+            {% endif %}
+            {% if listing.deleted_date %}
+            <div class="detail-item">
+                <span class="detail-label">Deleted</span>
+                <span class="detail-value">{{ listing.deleted_date[:19]|replace('T', ' ') }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="content-section">
+        <h2 class="section-title">Site Information</h2>
+        {% if listing.data.sites_seen %}
+        <div class="detail-item" style="margin-bottom: 15px;">
+            <span class="detail-label">Sites Found On</span>
+            <span class="detail-value">{{ listing.data.sites_seen|join(', ')|title }}</span>
+        </div>
+        {% endif %}
+        {% if listing.data.last_updated_site %}
+        <div class="detail-item" style="margin-bottom: 15px;">
+            <span class="detail-label">Last Updated From</span>
+            <span class="detail-value">{{ listing.data.last_updated_site|title }}</span>
+        </div>
+        {% endif %}
 
         <div class="action-buttons">
             {% if listing.data.urls %}
