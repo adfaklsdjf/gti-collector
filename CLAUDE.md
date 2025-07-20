@@ -64,8 +64,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Start Flask app (auto-reloads on changes with pre-flight migration check)
 source venv/bin/activate && python app.py
 
-# Run all tests
-source venv/bin/activate && python -m pytest -v
+# Run all tests (from project root)
+source venv/bin/activate && python -m pytest tests/ -v
 
 # Schema migration commands
 source venv/bin/activate && python schema_migrations.py check
@@ -156,7 +156,7 @@ gti-listings/
 ├── routes/                              # Route handlers
 ├── templates/                           # Jinja2 templates
 ├── gti-extension/                       # Browser extension
-├── test_*.py                            # Comprehensive test suite
+├── tests/                               # Comprehensive test suite (test_*.py files)
 ├── requirements.txt                     # Python dependencies (includes psutil)
 ├── data/                                # JSON listings (gitignored)
 ├── backups/                             # Migration backups (gitignored)

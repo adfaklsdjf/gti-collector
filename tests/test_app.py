@@ -8,6 +8,7 @@ import pytest
 import tempfile
 import shutil
 import json
+import os
 
 
 @pytest.fixture
@@ -22,7 +23,9 @@ def client():
     from routes.health import create_health_routes
     
     # Create a test Flask app with isolated store
-    test_app = Flask(__name__)
+    # Set template folder to parent directory since we're in tests/ subdirectory
+    template_folder = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'templates')
+    test_app = Flask(__name__, template_folder=template_folder)
     test_app.config['TESTING'] = True
     CORS(test_app)
     
