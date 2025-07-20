@@ -101,12 +101,17 @@ class Store:
         """Create a new listing."""
         listing_id = str(uuid.uuid4())
         vin = listing_data['vin']
+        current_time = datetime.now().isoformat()
         
-        # Add metadata and initialize comments field
+        # Add metadata, initialize comments field, and set date tracking
         listing_with_metadata = {
             'id': listing_id,
             'data': listing_data,
-            'comments': ''  # Initialize with empty comments
+            'comments': '',  # Initialize with empty comments
+            'created_date': current_time,
+            'last_modified_date': current_time,
+            'last_seen_date': current_time,
+            'deleted_date': None  # None for active listings
         }
         
         # Save listing to file
@@ -137,6 +142,7 @@ class Store:
     def _update_existing_listing(self, listing_id, new_data):
         """Update an existing listing with new data."""
         listing_file = self.data_dir / f"{listing_id}.json"
+        current_time = datetime.now().isoformat()
         
         try:
             # Load existing listing
@@ -151,37 +157,58 @@ class Store:
             # Compare and merge data for change detection
             comparison = compare_listing_data(existing_data, merged_data)
             
-            if not comparison['has_changes']:
-                logger.info(f"No changes detected for listing {listing_id}")
-                return {
-                    'success': False,
-                    'updated': False,
-                    'id': listing_id,
-                    'changes': {},
-                    'change_summary': 'No changes detected'
-                }
+            # Always update last_seen_date when data is submitted
+            # Preserve existing date fields (JIT migration should have added them if missing)
+            created_date = existing_listing.get('created_date')
+            last_modified_date = existing_listing.get('last_modified_date')
+            deleted_date = existing_listing.get('deleted_date')
             
-            # Update the listing (preserve comments field)
+            # Determine if this is a meaningful modification (not just last_seen_date update)
+            has_meaningful_changes = comparison['has_changes']
+            
+            # Always update last_seen_date
+            last_seen_date = current_time
+            
+            # Only update last_modified_date if there are meaningful changes
+            if has_meaningful_changes:
+                last_modified_date = current_time
+            
+            # Update the listing (preserve comments field and date tracking)
             updated_listing = {
                 'id': listing_id,
                 'data': merged_data,
-                'comments': existing_listing.get('comments', '')  # Preserve existing comments
+                'comments': existing_listing.get('comments', ''),  # Preserve existing comments
+                'created_date': created_date,
+                'last_modified_date': last_modified_date,
+                'last_seen_date': last_seen_date,
+                'deleted_date': deleted_date
             }
             
             # Save updated listing
             with open(listing_file, 'w', encoding='utf-8') as f:
                 json.dump(updated_listing, f, indent=2, ensure_ascii=False)
             
-            change_summary = format_change_summary(comparison['changes'])
-            logger.info(f"Updated listing {listing_id}: {change_summary}")
-            
-            return {
-                'success': False,  # Not a new listing
-                'updated': True,
-                'id': listing_id,
-                'changes': comparison['changes'],
-                'change_summary': change_summary
-            }
+            if has_meaningful_changes:
+                change_summary = format_change_summary(comparison['changes'])
+                logger.info(f"Updated listing {listing_id}: {change_summary}")
+                
+                return {
+                    'success': False,  # Not a new listing
+                    'updated': True,
+                    'id': listing_id,
+                    'changes': comparison['changes'],
+                    'change_summary': change_summary
+                }
+            else:
+                logger.info(f"Updated last_seen_date for listing {listing_id} (no other changes)")
+                
+                return {
+                    'success': False,  # Not a new listing
+                    'updated': True,   # File was updated (last_seen_date)
+                    'id': listing_id,
+                    'changes': {'last_seen_date': {'old': existing_listing.get('last_seen_date'), 'new': last_seen_date}},
+                    'change_summary': 'Updated last seen date only'
+                }
         
         except Exception as e:
             logger.error(f"Error updating listing {listing_id}: {e}")
@@ -259,13 +286,16 @@ class Store:
                 listing_data = json.load(f)
             
             vin = listing_data.get('data', {}).get('vin')
+            current_time = datetime.now().isoformat()
             
             # Create deleted directory if it doesn't exist
             deleted_dir = self.data_dir / 'deleted'
             deleted_dir.mkdir(parents=True, exist_ok=True)
             
-            # Add deletion timestamp to the listing data
-            listing_data['deleted_at'] = datetime.now().isoformat()
+            # Set deleted_date in the new date tracking system
+            listing_data['deleted_date'] = current_time
+            # Also preserve the old deleted_at field for backwards compatibility
+            listing_data['deleted_at'] = current_time
             
             # Move file to deleted directory
             deleted_file = deleted_dir / f"{listing_id}.json"

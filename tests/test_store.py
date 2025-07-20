@@ -93,8 +93,8 @@ class TestStore:
         # Try to add identical listing
         result2 = temp_store.add_listing(sample_listing)
         assert result2['success'] is False
-        assert result2['updated'] is False
-        assert result2['change_summary'] == 'No changes detected'
+        assert result2['updated'] is True  # File was updated (last_seen_date)
+        assert result2['change_summary'] == 'Updated last seen date only'
         assert result2['changes'] == {}
         
         # Verify only one listing exists
@@ -424,3 +424,145 @@ class TestStore:
         # Now retrieve the listing - should have empty comments
         retrieved_listing = temp_store.get_listing_by_id(listing_id)
         assert retrieved_listing['comments'] == ""
+    
+    def test_new_listing_has_date_fields(self, temp_store, sample_listing):
+        """Test that new listings have all date tracking fields set."""
+        result = temp_store.add_listing(sample_listing)
+        listing_id = result['id']
+        
+        # Verify new listing has all date fields
+        retrieved_listing = temp_store.get_listing_by_id(listing_id)
+        assert 'created_date' in retrieved_listing
+        assert 'last_modified_date' in retrieved_listing
+        assert 'last_seen_date' in retrieved_listing
+        assert 'deleted_date' in retrieved_listing
+        
+        # Verify date values are reasonable
+        assert retrieved_listing['created_date'] is not None
+        assert retrieved_listing['last_modified_date'] is not None
+        assert retrieved_listing['last_seen_date'] is not None
+        assert retrieved_listing['deleted_date'] is None  # Active listing
+        
+        # Verify created_date == last_modified_date == last_seen_date for new listing
+        assert retrieved_listing['created_date'] == retrieved_listing['last_modified_date']
+        assert retrieved_listing['created_date'] == retrieved_listing['last_seen_date']
+    
+    def test_update_with_changes_updates_modified_date(self, temp_store, sample_listing):
+        """Test that meaningful changes update last_modified_date."""
+        # Add initial listing
+        result = temp_store.add_listing(sample_listing)
+        listing_id = result['id']
+        original_listing = temp_store.get_listing_by_id(listing_id)
+        
+        import time
+        time.sleep(0.01)  # Small delay to ensure different timestamps
+        
+        # Update with meaningful changes
+        updated_listing = sample_listing.copy()
+        updated_listing['price'] = '$26,000'
+        updated_listing['title'] = 'Updated Title'
+        
+        update_result = temp_store.add_listing(updated_listing)
+        assert update_result['updated'] is True
+        assert 'price' in update_result['changes']
+        
+        # Check the updated listing
+        final_listing = temp_store.get_listing_by_id(listing_id)
+        
+        # created_date should not change
+        assert final_listing['created_date'] == original_listing['created_date']
+        
+        # last_modified_date should be updated
+        assert final_listing['last_modified_date'] != original_listing['last_modified_date']
+        
+        # last_seen_date should be updated
+        assert final_listing['last_seen_date'] != original_listing['last_seen_date']
+        
+        # deleted_date should remain None
+        assert final_listing['deleted_date'] is None
+    
+    def test_update_without_changes_only_updates_seen_date(self, temp_store, sample_listing):
+        """Test that duplicate data only updates last_seen_date."""
+        # Add initial listing
+        result = temp_store.add_listing(sample_listing)
+        listing_id = result['id']
+        original_listing = temp_store.get_listing_by_id(listing_id)
+        
+        import time
+        time.sleep(0.01)  # Small delay to ensure different timestamps
+        
+        # Submit identical data
+        update_result = temp_store.add_listing(sample_listing)
+        assert update_result['updated'] is True  # File was updated (last_seen_date)
+        assert update_result['change_summary'] == 'Updated last seen date only'
+        
+        # Check the updated listing
+        final_listing = temp_store.get_listing_by_id(listing_id)
+        
+        # created_date should not change
+        assert final_listing['created_date'] == original_listing['created_date']
+        
+        # last_modified_date should NOT change (no meaningful changes)
+        assert final_listing['last_modified_date'] == original_listing['last_modified_date']
+        
+        # last_seen_date should be updated
+        assert final_listing['last_seen_date'] != original_listing['last_seen_date']
+        
+        # deleted_date should remain None
+        assert final_listing['deleted_date'] is None
+    
+    def test_delete_listing_sets_deleted_date(self, temp_store, sample_listing):
+        """Test that deleting a listing sets deleted_date."""
+        # Add a listing first
+        result = temp_store.add_listing(sample_listing)
+        listing_id = result['id']
+        
+        # Delete the listing
+        delete_result = temp_store.delete_listing(listing_id)
+        assert delete_result['success'] is True
+        
+        # Verify file exists in deleted folder with deleted_date set
+        deleted_file = temp_store.data_dir / 'deleted' / f"{listing_id}.json"
+        assert deleted_file.exists()
+        
+        with open(deleted_file, 'r') as f:
+            deleted_data = json.load(f)
+        
+        # Verify both old and new deletion timestamps are set
+        assert 'deleted_at' in deleted_data  # Backwards compatibility
+        assert 'deleted_date' in deleted_data  # New date tracking system
+        assert deleted_data['deleted_date'] is not None
+        assert deleted_data['deleted_at'] is not None
+        assert deleted_data['deleted_date'] == deleted_data['deleted_at']  # Should be same
+    
+    def test_backward_compatibility_missing_date_fields(self, temp_store, sample_listing):
+        """Test that old listings without date fields get default values."""
+        # Add a listing first
+        result = temp_store.add_listing(sample_listing)
+        listing_id = result['id']
+        
+        # Manually modify the file to remove date fields (simulating old format)
+        listing_file = temp_store.data_dir / f"{listing_id}.json"
+        with open(listing_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        # Remove date fields
+        for field in ['created_date', 'last_modified_date', 'last_seen_date', 'deleted_date']:
+            if field in data:
+                del data[field]
+        
+        with open(listing_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        
+        # Now retrieve the listing - should have date fields populated
+        retrieved_listing = temp_store.get_listing_by_id(listing_id)
+        assert 'created_date' in retrieved_listing
+        assert 'last_modified_date' in retrieved_listing
+        assert 'last_seen_date' in retrieved_listing
+        assert 'deleted_date' in retrieved_listing
+        assert retrieved_listing['deleted_date'] is None
+        
+        # All other date fields should have reasonable values
+        assert retrieved_listing['created_date'] is not None
+        assert retrieved_listing['last_modified_date'] is not None
+        assert retrieved_listing['last_seen_date'] is not None

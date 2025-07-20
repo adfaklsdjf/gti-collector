@@ -105,12 +105,12 @@ source venv/bin/activate && python schema_migrations.py list-migrations
 - **Defensive programming** - Handle missing directories, network failures, etc.
 - **Field management** - Preserve optional fields, detect meaningful changes only
 
-## Current Data Schema (v2)
+## Current Data Schema (v3)
 
 ### Listing File Structure
 ```json
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "id": "uuid",
   "data": {
     "urls": {"cargurus": "url", "autotrader": "url"},
@@ -120,20 +120,31 @@ source venv/bin/activate && python schema_migrations.py list-migrations
     "distance": "numeric string", "title": "string", "location": "string",
     "trim_level": "string", "accidents": "string", "previous_owners": "string"
   },
-  "comments": "user-editable text"
+  "comments": "user-editable text",
+  "created_date": "ISO timestamp",
+  "last_modified_date": "ISO timestamp", 
+  "last_seen_date": "ISO timestamp",
+  "deleted_date": "ISO timestamp or null"
 }
 ```
 
 ### Index File Structure  
 ```json
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "vin_mappings": {
     "VIN123": "listing-id-456",
     "VIN789": "listing-id-012"
   }
 }
 ```
+
+### Date Tracking Logic (v3)
+- **created_date**: Set when listing is first added, never changes
+- **last_modified_date**: Updated only when listing data (excluding last_seen_date) changes
+- **last_seen_date**: Always updated when extension submits data, regardless of other changes  
+- **deleted_date**: Set when listing is moved to deleted directory, null for active listings
+- **Key principle**: Updating last_seen_date alone does NOT count as a modification
 
 ## Technical Notes
 
