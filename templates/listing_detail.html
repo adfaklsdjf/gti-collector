@@ -260,6 +260,12 @@
                 <span class="detail-value">{{ listing.data.trim_level }}</span>
             </div>
             {% endif %}
+            {% if listing.data.performance_package is not none %}
+            <div class="detail-item">
+                <span class="detail-label">Performance Package</span>
+                <span class="detail-value">{{ 'Yes' if listing.data.performance_package else 'No' }}</span>
+            </div>
+            {% endif %}
             {% if listing.data.accidents %}
             <div class="detail-item">
                 <span class="detail-label">Accidents</span>
@@ -371,6 +377,23 @@
     </div>
 
     <div class="content-section">
+        <h2 class="section-title">⚙️ Editable Fields</h2>
+        <div class="details-grid" style="margin-bottom: 20px;">
+            <div class="detail-item">
+                <span class="detail-label">Performance Package</span>
+                <select id="performancePackageSelect" class="form-select" style="padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px;">
+                    <option value="">Not Set</option>
+                    <option value="true" {{ 'selected' if listing.data.performance_package == true else '' }}>Yes</option>
+                    <option value="false" {{ 'selected' if listing.data.performance_package == false else '' }}>No</option>
+                </select>
+            </div>
+        </div>
+        <div class="comments-actions">
+            <button class="btn btn-success" onclick="saveEditableFields()" id="saveFieldsButton">
+                Save Fields
+            </button>
+        </div>
+        
         <div class="comments-section">
             <h3>💬 Comments</h3>
             <textarea
@@ -394,6 +417,58 @@
 </div>
 
 <script>
+function saveEditableFields() {
+    const performancePackageSelect = document.getElementById('performancePackageSelect');
+    const saveFieldsButton = document.getElementById('saveFieldsButton');
+    
+    // Convert select value to appropriate type
+    let performancePackageValue = null;
+    if (performancePackageSelect.value === 'true') {
+        performancePackageValue = true;
+    } else if (performancePackageSelect.value === 'false') {
+        performancePackageValue = false;
+    }
+    
+    // Show loading state
+    saveFieldsButton.disabled = true;
+    saveFieldsButton.textContent = 'Saving...';
+    
+    fetch(`/listing/{{ listing.id }}/fields`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+            performance_package: performancePackageValue
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success feedback
+            saveFieldsButton.textContent = 'Saved!';
+            saveFieldsButton.style.background = '#059669';
+            
+            // Reset button after 2 seconds
+            setTimeout(() => {
+                saveFieldsButton.disabled = false;
+                saveFieldsButton.textContent = 'Save Fields';
+                saveFieldsButton.style.background = '';
+            }, 2000);
+        } else {
+            alert(`Error: ${data.error || 'Unknown error occurred'}`);
+            saveFieldsButton.disabled = false;
+            saveFieldsButton.textContent = 'Save Fields';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error saving fields. Please try again.');
+        saveFieldsButton.disabled = false;
+        saveFieldsButton.textContent = 'Save Fields';
+    });
+}
+
 function saveComments() {
     const textarea = document.getElementById('commentsTextarea');
     const saveButton = document.getElementById('saveButton');

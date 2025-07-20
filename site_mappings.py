@@ -18,19 +18,20 @@ SITE_CAPABILITIES = {
     'cargurus': [
         'site', 'url', 'title', 'price', 'year', 'mileage', 'vin', 'location', 'distance',
         'drivetrain', 'exterior_color', 'interior_color', 'mpg', 'engine', 'fuel_type',
-        'transmission', 'trim_level', 'car_title', 'accidents', 'previous_owners', 'phone_number'
+        'transmission', 'trim_level', 'car_title', 'accidents', 'previous_owners', 'phone_number',
+        'performance_package'
     ],
     'edmunds': [
         'site', 'url', 'title', 'price', 'year', 'mileage', 'vin', 'location',
         'exterior_color', 'interior_color', 'trim_level', 'accidents', 'previous_owners',
-        'stock_number', 'seller_name'
+        'stock_number', 'seller_name', 'performance_package'
     ],
     'autotrader': [
-        'site', 'url', 'title'
+        'site', 'url', 'title', 'performance_package'
         # TODO: Add more capabilities as AutoTrader extraction is implemented
     ],
     'cars': [
-        'site', 'url', 'title'
+        'site', 'url', 'title', 'performance_package'
         # TODO: Add more capabilities as Cars.com extraction is implemented
     ]
 }
@@ -59,13 +60,15 @@ SITE_FIELD_MAPPINGS = {
         'car_title': 'car_title',
         'accidents': 'accidents',
         'previous_owners': 'previous_owners',
-        'phone_number': 'phone_number'
+        'phone_number': 'phone_number',
+        'performance_package': 'performance_package'
     },
     'autotrader': {
         # TODO: Define AutoTrader mappings
         'site': 'site',
         'url': 'url',
-        'title': 'title'
+        'title': 'title',
+        'performance_package': 'performance_package'
     },
     'edmunds': {
         # Edmunds-specific field mappings
@@ -83,13 +86,15 @@ SITE_FIELD_MAPPINGS = {
         'Owners': 'previous_owners',
         'Stock Number': 'stock_number',
         'Seller Name': 'seller_name',
-        'Seller Location': 'location'
+        'Seller Location': 'location',
+        'performance_package': 'performance_package'
     },
     'cars': {
         # TODO: Define Cars.com mappings
         'site': 'site',
         'url': 'url',
-        'title': 'title'
+        'title': 'title',
+        'performance_package': 'performance_package'
     }
 }
 

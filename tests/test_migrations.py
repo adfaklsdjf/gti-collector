@@ -11,6 +11,7 @@ from pathlib import Path
 from schema_migrations import SchemaMigrator
 from migrations.v001_url_to_multi_site import migrate as migrate_v001
 from migrations.v002_add_schema_versioning import migrate as migrate_v002
+from migrations.v004_add_performance_package import migrate as migrate_v004
 
 
 class TestSchemaMigrator:
@@ -167,3 +168,57 @@ class TestURLMigration:
         data1 = migrated_twice["data"]
         assert data1["urls"]["cargurus"] == "https://cargurus.com/listing/123"
         assert data1["last_updated_site"] == "cargurus"
+    
+    def test_v004_performance_package_migration(self):
+        """Test v004 migration adds performance_package field."""
+        # Create test listing without performance_package
+        test_listing = {
+            "schema_version": 3,
+            "id": "test-id",
+            "data": {
+                "price": "$25000",
+                "year": "2019",
+                "mileage": "45000",
+                "vin": "WVWZZZ1JZ1W123456"
+            },
+            "comments": "",
+            "created_date": "2023-01-01T12:00:00",
+            "last_modified_date": "2023-01-01T12:00:00",
+            "last_seen_date": "2023-01-01T12:00:00",
+            "deleted_date": None
+        }
+        
+        # Apply v004 migration
+        migrated_listing = migrate_v004(test_listing)
+        
+        # Verify performance_package field was added with None value
+        assert 'performance_package' in migrated_listing['data']
+        assert migrated_listing['data']['performance_package'] is None
+        
+        # Verify other fields are unchanged
+        assert migrated_listing['data']['price'] == "$25000"
+        assert migrated_listing['data']['year'] == "2019"
+        assert migrated_listing['id'] == "test-id"
+    
+    def test_v004_migration_idempotent(self):
+        """Test that v004 migration can be run multiple times safely."""
+        # Create test listing
+        test_listing = {
+            "schema_version": 3,
+            "id": "test-id",
+            "data": {
+                "price": "$25000",
+                "year": "2019",
+                "performance_package": True  # Already has the field
+            }
+        }
+        
+        # Apply migration twice
+        migrated_once = migrate_v004(test_listing)
+        migrated_twice = migrate_v004(migrated_once)
+        
+        # Should be unchanged after second migration
+        assert migrated_once == migrated_twice
+        
+        # Verify field value is preserved
+        assert migrated_twice['data']['performance_package'] is True

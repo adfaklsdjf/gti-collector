@@ -404,6 +404,108 @@ class TestStore:
         retrieved_listing = temp_store.get_listing_by_id(listing_id)
         assert retrieved_listing['comments'] == ""
     
+    def test_update_performance_package_success(self, temp_store, sample_listing):
+        """Test successfully updating performance_package field."""
+        # Add a listing first
+        result = temp_store.add_listing(sample_listing)
+        listing_id = result['id']
+        
+        # Update performance_package to True
+        update_result = temp_store.update_editable_fields(listing_id, {'performance_package': True})
+        
+        assert update_result['success'] is True
+        assert 'performance_package' in update_result['message']
+        
+        # Verify field was saved
+        retrieved_listing = temp_store.get_listing_by_id(listing_id)
+        assert retrieved_listing['data']['performance_package'] is True
+        
+        # Update to False
+        update_result = temp_store.update_editable_fields(listing_id, {'performance_package': False})
+        
+        assert update_result['success'] is True
+        
+        # Verify field was updated
+        retrieved_listing = temp_store.get_listing_by_id(listing_id)
+        assert retrieved_listing['data']['performance_package'] is False
+    
+    def test_update_performance_package_none_value(self, temp_store, sample_listing):
+        """Test updating performance_package to None (not set)."""
+        # Add a listing first
+        result = temp_store.add_listing(sample_listing)
+        listing_id = result['id']
+        
+        # Set to True first
+        temp_store.update_editable_fields(listing_id, {'performance_package': True})
+        
+        # Update performance_package to None
+        update_result = temp_store.update_editable_fields(listing_id, {'performance_package': None})
+        
+        assert update_result['success'] is True
+        
+        # Verify field was set to None
+        retrieved_listing = temp_store.get_listing_by_id(listing_id)
+        assert retrieved_listing['data']['performance_package'] is None
+    
+    def test_update_editable_fields_no_changes(self, temp_store, sample_listing):
+        """Test updating editable fields when no changes are made."""
+        # Add a listing first
+        result = temp_store.add_listing(sample_listing)
+        listing_id = result['id']
+        
+        # Set performance_package to True first
+        temp_store.update_editable_fields(listing_id, {'performance_package': True})
+        
+        # Try to set it to True again (no change)
+        update_result = temp_store.update_editable_fields(listing_id, {'performance_package': True})
+        
+        assert update_result['success'] is True
+        assert 'No changes needed' in update_result['message']
+    
+    def test_update_editable_fields_not_found(self, temp_store):
+        """Test updating editable fields for non-existent listing."""
+        fake_id = 'nonexistent-listing-id'
+        update_result = temp_store.update_editable_fields(fake_id, {'performance_package': True})
+        
+        assert update_result['success'] is False
+        assert 'not found' in update_result['message']
+        assert fake_id in update_result['message']
+    
+    def test_update_editable_fields_invalid_field(self, temp_store, sample_listing):
+        """Test that only allowed editable fields can be updated."""
+        # Add a listing first
+        result = temp_store.add_listing(sample_listing)
+        listing_id = result['id']
+        
+        # Try to update a non-editable field
+        update_result = temp_store.update_editable_fields(listing_id, {'price': '$30000', 'performance_package': True})
+        
+        assert update_result['success'] is True
+        
+        # Verify only performance_package was updated, not price
+        retrieved_listing = temp_store.get_listing_by_id(listing_id)
+        assert retrieved_listing['data']['performance_package'] is True
+        assert retrieved_listing['data']['price'] == '$25,000'  # Original price unchanged
+    
+    def test_editable_fields_preserved_during_listing_update(self, temp_store, sample_listing):
+        """Test that editable fields are preserved when listing data is updated."""
+        # Add a listing first
+        result = temp_store.add_listing(sample_listing)
+        listing_id = result['id']
+        
+        # Set performance_package
+        temp_store.update_editable_fields(listing_id, {'performance_package': True})
+        
+        # Update the listing data (should preserve editable fields)
+        updated_listing = sample_listing.copy()
+        updated_listing['price'] = '$24,000'
+        temp_store.add_listing(updated_listing)
+        
+        # Verify performance_package was preserved
+        retrieved_listing = temp_store.get_listing_by_id(listing_id)
+        assert retrieved_listing['data']['performance_package'] is True
+        assert retrieved_listing['data']['price'] == '$24,000'
+    
     def test_backward_compatibility_missing_comments(self, temp_store, sample_listing):
         """Test that old listings without comments field get empty comments."""
         # Add a listing first

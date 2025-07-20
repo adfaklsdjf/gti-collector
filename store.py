@@ -370,3 +370,73 @@ class Store:
                 'success': False,
                 'message': f'Error updating comments: {str(e)}'
             }
+    
+    def update_editable_fields(self, listing_id, fields):
+        """
+        Update editable fields for a listing.
+        
+        Args:
+            listing_id: The ID of the listing to update
+            fields: Dictionary of field names to values to update
+        
+        Returns:
+            dict with success status and message
+        """
+        listing_file = self.data_dir / f"{listing_id}.json"
+        
+        if not listing_file.exists():
+            logger.warning(f"Attempted to update editable fields for non-existent listing: {listing_id}")
+            return {
+                'success': False,
+                'message': f'Listing {listing_id} not found'
+            }
+        
+        try:
+            # Check if JIT migration is needed
+            if not self.migrator.migrate_file_jit(listing_file):
+                logger.error(f"JIT migration failed for listing file: {listing_file}")
+                return {
+                    'success': False,
+                    'message': 'Failed to migrate listing file'
+                }
+            
+            # Load existing listing
+            with open(listing_file, 'r', encoding='utf-8') as f:
+                listing_data = json.load(f)
+            
+            # Update editable fields in the data section
+            changes_made = []
+            for field_name, field_value in fields.items():
+                if field_name in ['performance_package']:  # Only allow specific editable fields
+                    old_value = listing_data.get('data', {}).get(field_name)
+                    if old_value != field_value:
+                        listing_data['data'][field_name] = field_value
+                        changes_made.append(f"{field_name}: {old_value} -> {field_value}")
+            
+            # Update modification timestamp if changes were made
+            if changes_made:
+                listing_data['last_modified_date'] = datetime.now().isoformat()
+                
+                # Save back to file
+                with open(listing_file, 'w', encoding='utf-8') as f:
+                    json.dump(listing_data, f, indent=2, ensure_ascii=False)
+                
+                logger.info(f"Updated editable fields for listing {listing_id}: {', '.join(changes_made)}")
+                
+                return {
+                    'success': True,
+                    'message': f'Fields updated for listing {listing_id}: {", ".join(changes_made)}'
+                }
+            else:
+                logger.info(f"No changes made to editable fields for listing {listing_id}")
+                return {
+                    'success': True,
+                    'message': f'No changes needed for listing {listing_id}'
+                }
+        
+        except Exception as e:
+            logger.error(f"Error updating editable fields for listing {listing_id}: {e}")
+            return {
+                'success': False,
+                'message': f'Error updating editable fields: {str(e)}'
+            }
