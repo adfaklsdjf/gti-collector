@@ -31,17 +31,6 @@ function extractEdmundsListing() {
     console.log("Could not find location element");
   }
 
-  const yearElement = document.querySelector('a.usurp-inventory-card-vdp-link');
-  if (yearElement) {
-    // Extracting the year from the text content which includes make and model
-    const yearMatch = yearElement.textContent.match(/\d{4}/);
-    if (yearMatch) {
-      data.Year = yearMatch[0];
-    } else {
-      data.Year = yearElement.textContent.trim(); // Fallback to full text if year not found
-    }
-  }
-
   // Find price element by looking for spans containing price
   const spans = document.querySelectorAll('span');
   let priceElement = null;
@@ -69,7 +58,7 @@ function extractEdmundsListing() {
     if (sellerNameElement) {
       data['Seller Name'] = sellerNameElement.textContent.trim();
     }
-    
+
     const sellerLocationElement = dealerInfoElement.querySelector('div.dealer-address');
     if (sellerLocationElement) {
       data['Seller Location'] = sellerLocationElement.textContent.trim();
