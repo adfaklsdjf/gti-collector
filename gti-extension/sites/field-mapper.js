@@ -7,7 +7,7 @@ const SITE_FIELD_MAPPINGS = {
   cargurus: {
     // Direct mappings (site field -> internal field)
     'site': 'site',
-    'url': 'url', 
+    'url': 'url',
     'title': 'title',
     'price': 'price',
     'year': 'year',
@@ -34,7 +34,7 @@ const SITE_FIELD_MAPPINGS = {
     'url': 'url',
     'Title': 'title',
     'Price': 'price',
-    'Year': 'year', 
+    'Year': 'year',
     'Mileage': 'mileage',
     'VIN': 'vin',
     'Trim': 'trim_level',
@@ -54,7 +54,7 @@ const SITE_FIELD_MAPPINGS = {
     // Add more mappings as AutoTrader extraction is implemented
   },
   cars: {
-    // TODO: Define Cars.com field mappings  
+    // TODO: Define Cars.com field mappings
     'site': 'site',
     'url': 'url',
     'title': 'title'
@@ -92,7 +92,7 @@ const SITE_CAPABILITIES = {
  */
 function mapFieldsToInternal(rawData, siteKey) {
   console.log(`🔄 Mapping ${siteKey} fields to internal format...`);
-  
+
   const mapping = SITE_FIELD_MAPPINGS[siteKey];
   if (!mapping) {
     console.error(`❌ No field mapping found for site: ${siteKey}`);
@@ -101,7 +101,7 @@ function mapFieldsToInternal(rawData, siteKey) {
 
   const mappedData = {};
   const capabilities = SITE_CAPABILITIES[siteKey] || [];
-  
+
   // Process each field from raw data
   for (const [siteField, value] of Object.entries(rawData)) {
     if (value === null || value === undefined || value === '') {
@@ -109,27 +109,27 @@ function mapFieldsToInternal(rawData, siteKey) {
     }
 
     let internalField = null;
-    
+
     // First: Check for explicit mapping
     if (mapping[siteField]) {
       internalField = mapping[siteField];
-      console.log(`📋 Explicit mapping: ${siteField} -> ${internalField}`);
+      // console.log(`📋 Explicit mapping: ${siteField} -> ${internalField}`);
     }
     // Second: Look for direct name match
     else if (capabilities.includes(siteField)) {
       internalField = siteField;
-      console.log(`🎯 Direct match: ${siteField} -> ${internalField}`);
+      // console.log(`🎯 Direct match: ${siteField} -> ${internalField}`);
     }
     // Third: Log and drop unknown fields
     else {
-      console.log(`⚠️ Unknown field dropped: ${siteField} = "${value}"`);
+      // console.log(`⚠️ Unknown field dropped: ${siteField} = "${value}"`);
       continue;
     }
-    
+
     mappedData[internalField] = value;
-    console.log(`✅ Mapped: ${siteField} = "${value}" -> ${internalField}`);
+    // console.log(`✅ Mapped: ${siteField} = "${value}" -> ${internalField}`);
   }
-  
+
   console.log(`🔄 Field mapping complete for ${siteKey}:`, mappedData);
   return mappedData;
 }

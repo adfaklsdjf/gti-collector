@@ -9,7 +9,7 @@
  */
 function extractEdmundsListing() {
   console.log('🔍 Extracting car details from Edmunds...');
-  
+
   const data = {};
 
   // Add site identifier and URL
@@ -20,6 +20,15 @@ function extractEdmundsListing() {
   const titleElement = document.querySelector('title');
   if (titleElement) {
     data.Title = titleElement.textContent.trim();
+  }
+
+  // extract year from title
+  const yearMatch = data.Title.match(/(20[12][0-9])/i);
+  if (yearMatch) {
+      data.year = yearMatch[1]; // Remove commas for numeric format
+      console.log(`Extracted year: "${data.year}"`);
+  } else {
+    console.log("Could not find location element");
   }
 
   const yearElement = document.querySelector('a.usurp-inventory-card-vdp-link');
@@ -69,8 +78,8 @@ function extractEdmundsListing() {
     try {
       const jsonData = JSON.parse(script.textContent);
       // Find the Vehicle object in structured data
-      const vehicleData = Array.isArray(jsonData) 
-        ? jsonData.find(item => item['@type'] === 'Vehicle') 
+      const vehicleData = Array.isArray(jsonData)
+        ? jsonData.find(item => item['@type'] === 'Vehicle')
         : (jsonData['@type'] === 'Vehicle' ? jsonData : null);
 
       if (vehicleData) {
@@ -106,7 +115,7 @@ function extractEdmundsListing() {
         if (vehicleData.numberOfPreviousOwners) {
           data.Owners = vehicleData.numberOfPreviousOwners.toString();
         }
-        
+
         // Extract price from offers if not found elsewhere
         if (!data.Price && vehicleData.offers && vehicleData.offers.price) {
           // Convert to string and remove commas for consistency

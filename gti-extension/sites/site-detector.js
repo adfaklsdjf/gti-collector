@@ -12,7 +12,7 @@ const SUPPORTED_SITES = {
   edmunds: {
     name: 'Edmunds',
     urlPattern: /edmunds\.com/i,
-    listingUrlPattern: /edmunds\.com.*\/inventory\//i,
+    listingUrlPattern: /edmunds\.com.*\/vin\//i,
     extractor: 'edmunds'
   },
   autotrader: {
@@ -35,14 +35,14 @@ const SUPPORTED_SITES = {
  */
 function detectCurrentSite() {
   const currentUrl = window.location.href;
-  
+
   for (const [siteKey, siteConfig] of Object.entries(SUPPORTED_SITES)) {
     if (siteConfig.urlPattern.test(currentUrl)) {
       console.log(`🌐 Detected site: ${siteConfig.name} (${siteKey})`);
       return siteKey;
     }
   }
-  
+
   console.log(`❌ Unsupported site: ${currentUrl}`);
   return null;
 }
@@ -56,10 +56,10 @@ function isListingPage(siteKey) {
   if (!siteKey || !SUPPORTED_SITES[siteKey]) {
     return false;
   }
-  
+
   const currentUrl = window.location.href;
   const isListing = SUPPORTED_SITES[siteKey].listingUrlPattern.test(currentUrl);
-  
+
   console.log(`📄 Is listing page for ${siteKey}: ${isListing}`);
   return isListing;
 }

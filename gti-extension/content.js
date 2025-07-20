@@ -318,9 +318,11 @@ function handleExtensionClick() {
   switch (currentSite) {
     case 'cargurus':
       rawCarDetails = extractCarGurusListing();
+      console.log("CarGurus extractor returned:", rawCarDetails);
       break;
     case 'edmunds':
       rawCarDetails = extractEdmundsListing();
+      console.log("Edmunds extractor returned:", rawCarDetails);
       break;
     case 'autotrader':
       rawCarDetails = extractAutoTraderListing();
@@ -346,6 +348,7 @@ function handleExtensionClick() {
   if (!carDetails.location) console.warn('⚠️ Location not extracted');
 
   if (missingFields.length > 0) {
+    console.warn(`❌ Missing required fields: ${missingFields.join(', ')}`);
     showToast(`❌ Missing required fields: ${missingFields.join(', ')}`, 'error');
     return;
   }
@@ -365,6 +368,7 @@ function handleExtensionClick() {
       }
     })
     .catch(error => {
+      console.error('❌ Error sending data to backend:', error);
       showToast(`❌ Error: ${error.message}`, 'error');
     });
 }
