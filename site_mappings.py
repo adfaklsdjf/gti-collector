@@ -10,7 +10,8 @@ from typing import Dict, Any, Optional
 logger = logging.getLogger(__name__)
 
 # Define which internal fields are required for desirability calculations
-DESIRABILITY_REQUIRED_FIELDS = ['price', 'year', 'mileage', 'distance']
+# DESIRABILITY_REQUIRED_FIELDS = ['price', 'year', 'mileage', 'distance']
+DESIRABILITY_REQUIRED_FIELDS = ['price', 'year', 'mileage']
 
 # Define site capabilities - which internal fields each site can provide
 SITE_CAPABILITIES = {
