@@ -63,14 +63,17 @@ function extractEdmundsListing() {
     data.Mileage = mileageElement.textContent.trim();
   }
 
-  const sellerNameElement = document.querySelector('div.mt-md-0_5.mt-lg-1.mb-0_5');
-  if (sellerNameElement) {
-    data['Seller Name'] = sellerNameElement.textContent.trim();
-  }
-
-  const sellerLocationElement = document.querySelector('div.Seller-address.text-gray-40');
-  if (sellerLocationElement) {
-    data['Seller Location'] = sellerLocationElement.textContent.trim();
+  const dealerInfoElement = document.querySelector('div[data-test="dealer-info"]');
+  if (dealerInfoElement) {
+    const sellerNameElement = dealerInfoElement.querySelector('h3.dealer-name');
+    if (sellerNameElement) {
+      data['Seller Name'] = sellerNameElement.textContent.trim();
+    }
+    
+    const sellerLocationElement = dealerInfoElement.querySelector('div.dealer-address');
+    if (sellerLocationElement) {
+      data['Seller Location'] = sellerLocationElement.textContent.trim();
+    }
   }
 
   // Extracting from script tag containing structured data (JSON-LD)
