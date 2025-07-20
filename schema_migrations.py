@@ -201,11 +201,18 @@ class SchemaMigrator:
                 file_data = json.load(f)
             
             # Apply each pending migration
+            migration_context = {'data_dir': self.data_dir}
             for version in pending:
                 migration_logger.debug(f"⚡ Applying migration v{version:03d} to {file_path.name}")
                 
                 migration_module = self.load_migration(version)
-                file_data = migration_module.migrate(file_data)
+                # Check if migration function accepts context parameter
+                import inspect
+                sig = inspect.signature(migration_module.migrate)
+                if len(sig.parameters) > 1:
+                    file_data = migration_module.migrate(file_data, migration_context)
+                else:
+                    file_data = migration_module.migrate(file_data)
                 
                 # Ensure schema version is updated
                 file_data['schema_version'] = version

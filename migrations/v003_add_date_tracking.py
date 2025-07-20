@@ -23,7 +23,7 @@ migration_logger = logging.getLogger('schema_migrations')
 LOG_PATTERNS = {
     'new_listing': re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}),\d+ - INFO - Saved new listing with ID ([a-f0-9-]+) and VIN ([A-Z0-9]+)'),
     'existing_listing': re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}),\d+ - INFO - Listing with VIN ([A-Z0-9]+) already exists with ID ([a-f0-9-]+)'),
-    'updated_listing': re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}),\d+ - INFO - Updated listing with VIN: ([A-Z0-9]+)')
+    'updated_listing': re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}),\d+ - INFO - Updated listing ([a-f0-9-]+):')
 }
 
 def parse_app_log(data_dir: str) -> Dict[str, Dict[str, Optional[str]]]:
@@ -126,24 +126,21 @@ def parse_app_log(data_dir: str) -> Dict[str, Dict[str, Optional[str]]]:
                 # Check for listing updates (modified date)
                 match = LOG_PATTERNS['updated_listing'].search(line)
                 if match:
-                    timestamp_str, vin = match.groups()
+                    timestamp_str, listing_id = match.groups()
                     timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S').isoformat()
                     
-                    # Find listing ID from VIN
-                    listing_id = vin_to_id.get(vin)
-                    if listing_id:
-                        if listing_id not in listing_dates:
-                            listing_dates[listing_id] = {
-                                'created_date': None,
-                                'last_modified_date': None,
-                                'last_seen_date': None,
-                                'deleted_date': None
-                            }
-                        
-                        # Update last modified date (latest wins)
-                        listing_dates[listing_id]['last_modified_date'] = timestamp
-                        # Also update last seen date
-                        listing_dates[listing_id]['last_seen_date'] = timestamp
+                    if listing_id not in listing_dates:
+                        listing_dates[listing_id] = {
+                            'created_date': None,
+                            'last_modified_date': None,
+                            'last_seen_date': None,
+                            'deleted_date': None
+                        }
+                    
+                    # Update last modified date (latest wins)
+                    listing_dates[listing_id]['last_modified_date'] = timestamp
+                    # Also update last seen date
+                    listing_dates[listing_id]['last_seen_date'] = timestamp
                     continue
     
     except Exception as e:
