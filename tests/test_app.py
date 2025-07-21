@@ -355,7 +355,8 @@ class TestIndividualListingPage:
         # Check for page-specific elements
         assert b'Vehicle Details' in response.data
         assert b'Back to All Listings' in response.data
-        assert b'View Original Listing' in response.data
+        # Check for multi-site URL format (should have "View on" text)
+        assert b'View on' in response.data
         assert b'Vehicle Identification Number' in response.data
     
     def test_view_listing_not_found(self, client):
@@ -720,6 +721,7 @@ class TestCSVExport:
         """Test CSV export with listings missing some fields."""
         # Add a listing with missing optional fields
         minimal_listing = {
+            'site': 'cargurus',
             'url': 'https://test.com/listing/123',
             'price': '$25,000',
             'year': '2019',
@@ -751,6 +753,7 @@ class TestCSVExport:
         """Test CSV export with special characters in data."""
         # Add a listing with special characters
         special_listing = {
+            'site': 'cargurus',
             'url': 'https://test.com/listing/123',
             'price': '$25,000',
             'year': '2019',

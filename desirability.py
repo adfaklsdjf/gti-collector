@@ -237,8 +237,8 @@ def calculate_desirability_score(listing: Dict[str, Any], all_listings: List[Dic
         # Calculate weighted score
         total_score = (
             price_score * weights['price'] +
-            + mileage_score * weights['mileage']
-            + year_score * weights['year']
+            mileage_score * weights['mileage'] +
+            year_score * weights['year']
             # + distance_score * weights['distance']
         )
 

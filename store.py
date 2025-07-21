@@ -206,7 +206,7 @@ class Store:
                     'success': False,  # Not a new listing
                     'updated': True,   # File was updated (last_seen_date)
                     'id': listing_id,
-                    'changes': {'last_seen_date': {'old': existing_listing.get('last_seen_date'), 'new': last_seen_date}},
+                    'changes': {},  # No meaningful changes, only date tracking
                     'change_summary': 'Updated last seen date only'
                 }
         

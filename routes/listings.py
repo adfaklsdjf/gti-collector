@@ -236,8 +236,23 @@ def create_listings_routes(app, store):
             # Write data rows
             for listing in listings:
                 data = listing.get('data', {})
+                
+                # Get primary URL from multi-site structure
+                primary_url = ''
+                if 'urls' in data and data['urls']:
+                    # Use URL from last_updated_site if available, otherwise first available URL
+                    last_updated_site = data.get('last_updated_site')
+                    if last_updated_site and last_updated_site in data['urls']:
+                        primary_url = data['urls'][last_updated_site]
+                    else:
+                        # Fallback to first available URL
+                        primary_url = next(iter(data['urls'].values()))
+                elif 'url' in data:
+                    # Fallback for older single-URL format
+                    primary_url = data['url']
+                
                 writer.writerow([
-                    data.get('url', ''),
+                    primary_url,
                     data.get('price', ''),
                     data.get('year', ''),
                     data.get('mileage', ''),
