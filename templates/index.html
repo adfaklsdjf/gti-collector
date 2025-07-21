@@ -252,6 +252,14 @@
                 <span class="detail-value">{{ listing.data.distance }}</span>
             </div>
             <div class="detail-item">
+                <span class="detail-label">Exterior Color</span>
+                <span class="detail-value">{{ listing.data.exterior_color or "Not specified" }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Performance Pkg</span>
+                <span class="detail-value">{{ "Yes" if listing.data.performance_package == true else ("No" if listing.data.performance_package == false else "Not specified") }}</span>
+            </div>
+            <div class="detail-item">
                 <span class="detail-label">ID</span>
                 <span class="detail-value">{{ listing.id[:8] }}...</span>
             </div>
