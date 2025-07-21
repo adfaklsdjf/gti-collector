@@ -9,9 +9,11 @@ from flask import Flask
 from flask_cors import CORS
 from store import Store
 from config import setup_logging
+from config_manager import ConfigManager
 from routes.listings import create_listings_routes
 from routes.individual import create_individual_routes
 from routes.health import create_health_routes
+from routes.config import create_config_routes
 from schema_migrations import SchemaMigrator
 from pidlock import PidLock
 
@@ -59,13 +61,15 @@ CORS(app)  # Enable CORS for all domains on all routes
 # Run pre-flight checks
 run_preflight_checks()
 
-# Initialize store
+# Initialize store and config manager
 store = Store()
+config_manager = ConfigManager()
 
 # Register routes
 create_listings_routes(app, store)
 create_individual_routes(app, store)
 create_health_routes(app)
+create_config_routes(app, config_manager)
 
 if __name__ == '__main__':
     logger.info("Starting GTI Listings Flask app on port 5000")

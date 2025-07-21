@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Configuration - GTI Listings{% endblock %}
+
+{% block styles %}
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.header h1 {
+    color: #1f2937;
+    margin: 0;
+}
+.header-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 15px;
+}
+.nav-button {
+    background: #6b7280;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s;
+}
+.nav-button:hover {
+    background: #4b5563;
+    color: white;
+}
+.config-form {
+    max-width: 600px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 8px;
+    padding: 30px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.form-group {
+    margin-bottom: 20px;
+}
+.form-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 8px;
+}
+.form-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #374151;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+.form-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+.form-help {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 4px;
+}
+.submit-button {
+    background: #059669;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.submit-button:hover {
+    background: #047857;
+}
+.submit-button:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+}
+{% endblock %}
+
+{% block content %}
+<div class="header">
+    <h1>⚙️ Configuration</h1>
+    <div class="header-actions">
+        <a href="/" class="nav-button">
+            ← Back to Listings
+        </a>
+    </div>
+</div>
+
+<div class="config-form">
+    <form method="POST" action="/config">
+        <div class="form-group">
+            <label for="sample_setting" class="form-label">Sample Setting</label>
+            <input 
+                type="text" 
+                id="sample_setting" 
+                name="sample_setting" 
+                class="form-input"
+                value="{{ config.sample_setting or '' }}"
+                maxlength="1000"
+                placeholder="Enter a sample configuration value..."
+            >
+            <div class="form-help">
+                This is a demo configuration field that persists your input. Maximum 1000 characters.
+            </div>
+        </div>
+        
+        <button type="submit" class="submit-button">
+            💾 Save Configuration
+        </button>
+    </form>
+</div>
+{% endblock %}
